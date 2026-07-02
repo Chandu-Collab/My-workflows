@@ -1,0 +1,1219 @@
+{
+  "updatedAt": "2026-07-02T06:21:19.971Z",
+  "createdAt": "2026-07-01T06:03:13.703Z",
+  "id": "YOUR_WORKFLOW_ID",
+  "name": "AI Website Chatbot with Memory",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "openai/gpt-oss-20b",
+          "mode": "list",
+          "cachedResultName": "openai/gpt-oss-20b"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        704,
+        208
+      ],
+      "id": "c3bfe62a-3f88-47c1-a54c-35f7836ad03d",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "website-chat",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "a0d79637-5c92-492c-814d-8ae2dccda1ef",
+      "name": "Receive Chat Request",
+      "webhookId": "YOUR_WEBHOOK_ID"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "89f70b53-0772-422b-8e4a-13a367f1e11a",
+              "name": "conversationId",
+              "value": "={{ $json.body.conversationId }}",
+              "type": "string"
+            },
+            {
+              "id": "a956558b-bfb7-4216-9f21-218742f39cdb",
+              "name": "message",
+              "value": "={{ $json.body.message }}",
+              "type": "string"
+            },
+            {
+              "id": "c04b9c84-aacb-4457-97d8-1b60f1cf5603",
+              "name": "timestamp",
+              "value": "={{new Date().toISOString()}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "9568f004-e7ed-4508-9438-395eecb79866",
+      "name": "Extract Request Data"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "AI Chat bot with memory",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Messages",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "ConversationId",
+              "lookupValue": "={{ $json.conversationId }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        416,
+        0
+      ],
+      "id": "38f37c5c-8ea8-43ee-9cc0-9f3f0a39f459",
+      "name": "Load Conversion Memory",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const history = [];\n\nfor (const item of items) {\n  if (item.json.role && item.json.messages) {\n    history.push(`${item.json.role}: ${item.json.messages}`);\n  }\n}\n\nreturn [\n  {\n    json: {\n      conversationId: $('Extract Request Data').first().json.conversationId,\n      message: $('Extract Request Data').first().json.message,\n      timestamp: $('Extract Request Data').first().json.timestamp,\n      history: history.join('\\n')\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "5a390f4a-422f-4d56-8f35-8d88b6baccf7",
+      "name": "Format Conversion History"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Conversation History:\n{{ $json.history }}\n\nLatest User Message:\n{{ $json.message }}\n\nAnswer only the latest user message while using the conversation history for context.\nDo not repeat previous answers unless necessary.",
+        "options": {
+          "systemMessage": "You are a professional AI assistant for a business website.\n\nYour job is to answer users naturally, accurately, and concisely.\n\nInstructions:\n\n- Use the previous conversation history to maintain context.\n- If the current message refers to something discussed earlier, use the conversation history to answer correctly.\n- If there is no previous conversation history, respond normally.\n- Never invent information or make up facts.\n- If you don't know the answer, politely say that you don't have that information.\n- Keep responses friendly, professional, and conversational.\n- Answer in plain text.\n- Do not mention that you are an AI model unless explicitly asked.\n- Keep answers concise unless the user asks for more detail."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        832,
+        0
+      ],
+      "id": "5a1b7021-5cee-4214-935b-a145b9bc97a5",
+      "name": "AI Chat Assitant"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1136,
+        -64
+      ],
+      "id": "0ae5c381-d9b0-49f9-955a-67ef026fd7fe",
+      "name": "Merge AI node"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "AI Chat bot with memory",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Messages",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ConversationId": "={{ $json.conversationId }}",
+            "role": "user",
+            "messages": "={{ $json.message }}",
+            "timestamp": "={{ $json.timestamp }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "ConversationId",
+              "displayName": "ConversationId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "role",
+              "displayName": "role",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "messages",
+              "displayName": "messages",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1344,
+        -64
+      ],
+      "id": "21d49b90-e5ec-4575-b0cb-c726848a6b5d",
+      "name": "Save user message",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1488,
+        -192
+      ],
+      "id": "9e458318-fe7a-417d-8e7c-85d936c55de6",
+      "name": "prepare final response"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "AI Chat bot with memory",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Messages",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "role": "assistant",
+            "ConversationId": "={{ $json.ConversationId }}",
+            "messages": "={{ $json.output }}",
+            "timestamp": "={{ $json.timestamp }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "ConversationId",
+              "displayName": "ConversationId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "role",
+              "displayName": "role",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "messages",
+              "displayName": "messages",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1632,
+        -80
+      ],
+      "id": "82b4b71f-2766-40d8-9bc4-f536d9ab803b",
+      "name": "Save Assistant Reply",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1840,
+        -80
+      ],
+      "id": "88312cc9-c67e-42c9-8ca3-a945242fe029",
+      "name": "Return Chat Response"
+    },
+    {
+      "parameters": {
+        "content": "Welcome to the AI Website Chatbot with Memory!\n\nBefore running this workflow, complete the setup below:\n\n1. Configure your AI Model credentials.\n2. Connect your Google account.\n3. Create the required Google Sheet.\n4. Update the Google Sheet in all Google Sheets nodes.\n5. Activate the workflow.\n6. Test using the Webhook Test URL.\n7. Once working, switch to the Production URL for website integration.",
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -160,
+        -272
+      ],
+      "typeVersion": 1,
+      "id": "a1640c2f-df1c-41e9-bbe4-b540be3a0b91",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "🤖 AI Configuration\nThis workflow uses an OpenAI-compatible chat model.\n\nRecommended Model:\n• NVIDIA OpenAI Compatible Model\n\nRequired:\n\n• NVIDIA API Key\n• Base URL\n• Model Name\n\nUpdate the Chat Model node with your credentials before testing.\n\nAny OpenAI-compatible provider can also be used by updating the credentials.",
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        816,
+        -288
+      ],
+      "typeVersion": 1,
+      "id": "d8d538e3-b30d-41ca-9f4f-e3c393b0279e",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "📊 Conversation Memory\nCreate a Google Sheet named:\n\nMessages\n\nRequired Columns:\n\n• ConversationId\n• role\n• messages\n• timestamp\n\nConnect your Google account and select this sheet in all Google Sheets nodes.\n\nThis sheet stores the complete conversation history and enables chatbot memory.",
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        384,
+        -256
+      ],
+      "typeVersion": 1,
+      "id": "1fe76a7e-4a7a-4f07-8721-be44050c683f",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "🌐 Webhook\nSend a POST request to the webhook.\n\nExample Request:\n\n{\n  \"conversationId\": \"abc123\",\n  \"message\": \"Hello\"\n}\n\nUse the same conversationId to continue an existing conversation.\n\nUse a different conversationId to start a new chat session.",
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -112,
+        208
+      ],
+      "typeVersion": 1,
+      "id": "4e701972-6f95-4090-b695-16bf249ee04f",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "• Keep the same conversationId for memory.\n• A new conversationId starts a new chat.\n• Do not modify the Google Sheet column names.\n• Keep the Respond to Webhook node connected.\n• Make sure the Webhook Response Mode is:\n  \"Using Respond to Webhook Node\"",
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1440,
+        192
+      ],
+      "typeVersion": 1,
+      "id": "305d8d47-6b70-4036-9097-91ceff5b146b",
+      "name": "Sticky Note4"
+    }
+  ],
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Chat Assitant",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Receive Chat Request": {
+      "main": [
+        [
+          {
+            "node": "Extract Request Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Request Data": {
+      "main": [
+        [
+          {
+            "node": "Load Conversion Memory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Conversion Memory": {
+      "main": [
+        [
+          {
+            "node": "Format Conversion History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Conversion History": {
+      "main": [
+        [
+          {
+            "node": "AI Chat Assitant",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge AI node",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Chat Assitant": {
+      "main": [
+        [
+          {
+            "node": "Merge AI node",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "prepare final response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge AI node": {
+      "main": [
+        [
+          {
+            "node": "Save user message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save user message": {
+      "main": [
+        [
+          {
+            "node": "prepare final response",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "prepare final response": {
+      "main": [
+        [
+          {
+            "node": "Save Assistant Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Assistant Reply": {
+      "main": [
+        [
+          {
+            "node": "Return Chat Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "timeSavedPerExecution": 2
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "pinData": {},
+  "versionId": "42ff7f3f-e650-4a95-a015-aab67f391841",
+  "activeVersionId": "42ff7f3f-e650-4a95-a015-aab67f391841",
+  "versionCounter": 154,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-07-01T06:03:13.709Z",
+      "createdAt": "2026-07-01T06:03:13.709Z",
+      "role": "workflow:owner",
+      "workflowId": "YOUR_WORKFLOW_ID",
+      "projectId": "YOUR_PROJECT_ID",
+      "project": {
+        "updatedAt": "2026-06-04T07:55:05.260Z",
+        "createdAt": "2026-06-04T07:52:41.897Z",
+        "id": "YOUR_PROJECT_ID",
+        "name": "Chandu M <your.email@example.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "YOUR_USER_ID"
+      }
+    }
+  ],
+  "tags": [
+    {
+      "updatedAt": "2026-06-09T06:33:27.317Z",
+      "createdAt": "2026-06-09T06:33:27.317Z",
+      "id": "8ZUaEfWmhomQ0P8p",
+      "name": "n8n"
+    },
+    {
+      "updatedAt": "2026-06-09T06:33:15.749Z",
+      "createdAt": "2026-06-09T06:33:15.749Z",
+      "id": "OqenQjr9s45g7AEO",
+      "name": "ai"
+    },
+    {
+      "updatedAt": "2026-06-09T06:33:45.548Z",
+      "createdAt": "2026-06-09T06:33:45.548Z",
+      "id": "SSAFLny1wplVixFm",
+      "name": "ai agent"
+    }
+  ],
+  "parentFolder": null,
+  "activeVersion": {
+    "updatedAt": "2026-07-02T06:23:07.000Z",
+    "createdAt": "2026-07-02T06:21:19.973Z",
+    "versionId": "42ff7f3f-e650-4a95-a015-aab67f391841",
+    "workflowId": "YOUR_WORKFLOW_ID",
+    "nodes": [
+      {
+        "parameters": {
+          "model": {
+            "__rl": true,
+            "value": "openai/gpt-oss-20b",
+            "mode": "list",
+            "cachedResultName": "openai/gpt-oss-20b"
+          },
+          "builtInTools": {},
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+        "typeVersion": 1.3,
+        "position": [
+          704,
+          208
+        ],
+        "id": "c3bfe62a-3f88-47c1-a54c-35f7836ad03d",
+        "name": "OpenAI Chat Model",
+        "credentials": {
+          "openAiApi": {
+            "id": "YOUR_OPENAI_CREDENTIAL_ID",
+            "name": "OpenAI account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "website-chat",
+          "responseMode": "responseNode",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          0,
+          0
+        ],
+        "id": "a0d79637-5c92-492c-814d-8ae2dccda1ef",
+        "name": "Receive Chat Request",
+        "webhookId": "YOUR_WEBHOOK_ID"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "89f70b53-0772-422b-8e4a-13a367f1e11a",
+                "name": "conversationId",
+                "value": "={{ $json.body.conversationId }}",
+                "type": "string"
+              },
+              {
+                "id": "a956558b-bfb7-4216-9f21-218742f39cdb",
+                "name": "message",
+                "value": "={{ $json.body.message }}",
+                "type": "string"
+              },
+              {
+                "id": "c04b9c84-aacb-4457-97d8-1b60f1cf5603",
+                "name": "timestamp",
+                "value": "={{new Date().toISOString()}}",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          208,
+          0
+        ],
+        "id": "9568f004-e7ed-4508-9438-395eecb79866",
+        "name": "Extract Request Data"
+      },
+      {
+        "parameters": {
+          "documentId": {
+            "__rl": true,
+            "value": "YOUR_GOOGLE_SHEET_ID",
+            "mode": "list",
+            "cachedResultName": "AI Chat bot with memory",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit?usp=drivesdk"
+          },
+          "sheetName": {
+            "__rl": true,
+            "value": "gid=0",
+            "mode": "list",
+            "cachedResultName": "Messages",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit#gid=0"
+          },
+          "filtersUI": {
+            "values": [
+              {
+                "lookupColumn": "ConversationId",
+                "lookupValue": "={{ $json.conversationId }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.googleSheets",
+        "typeVersion": 4.7,
+        "position": [
+          416,
+          0
+        ],
+        "id": "38f37c5c-8ea8-43ee-9cc0-9f3f0a39f459",
+        "name": "Load Conversion Memory",
+        "alwaysOutputData": true,
+        "credentials": {
+          "googleSheetsOAuth2Api": {
+            "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+            "name": "Google Sheets account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const history = [];\n\nfor (const item of items) {\n  if (item.json.role && item.json.messages) {\n    history.push(`${item.json.role}: ${item.json.messages}`);\n  }\n}\n\nreturn [\n  {\n    json: {\n      conversationId: $('Extract Request Data').first().json.conversationId,\n      message: $('Extract Request Data').first().json.message,\n      timestamp: $('Extract Request Data').first().json.timestamp,\n      history: history.join('\\n')\n    }\n  }\n];"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          624,
+          0
+        ],
+        "id": "5a390f4a-422f-4d56-8f35-8d88b6baccf7",
+        "name": "Format Conversion History"
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "=Conversation History:\n{{ $json.history }}\n\nLatest User Message:\n{{ $json.message }}\n\nAnswer only the latest user message while using the conversation history for context.\nDo not repeat previous answers unless necessary.",
+          "options": {
+            "systemMessage": "You are a professional AI assistant for a business website.\n\nYour job is to answer users naturally, accurately, and concisely.\n\nInstructions:\n\n- Use the previous conversation history to maintain context.\n- If the current message refers to something discussed earlier, use the conversation history to answer correctly.\n- If there is no previous conversation history, respond normally.\n- Never invent information or make up facts.\n- If you don't know the answer, politely say that you don't have that information.\n- Keep responses friendly, professional, and conversational.\n- Answer in plain text.\n- Do not mention that you are an AI model unless explicitly asked.\n- Keep answers concise unless the user asks for more detail."
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 3.1,
+        "position": [
+          832,
+          0
+        ],
+        "id": "5a1b7021-5cee-4214-935b-a145b9bc97a5",
+        "name": "AI Chat Assitant"
+      },
+      {
+        "parameters": {
+          "mode": "combine",
+          "combineBy": "combineByPosition",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.merge",
+        "typeVersion": 3.2,
+        "position": [
+          1136,
+          -64
+        ],
+        "id": "0ae5c381-d9b0-49f9-955a-67ef026fd7fe",
+        "name": "Merge AI node"
+      },
+      {
+        "parameters": {
+          "operation": "append",
+          "documentId": {
+            "__rl": true,
+            "value": "YOUR_GOOGLE_SHEET_ID",
+            "mode": "list",
+            "cachedResultName": "AI Chat bot with memory",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit?usp=drivesdk"
+          },
+          "sheetName": {
+            "__rl": true,
+            "value": "gid=0",
+            "mode": "list",
+            "cachedResultName": "Messages",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit#gid=0"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "ConversationId": "={{ $json.conversationId }}",
+              "role": "user",
+              "messages": "={{ $json.message }}",
+              "timestamp": "={{ $json.timestamp }}"
+            },
+            "matchingColumns": [],
+            "schema": [
+              {
+                "id": "ConversationId",
+                "displayName": "ConversationId",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "role",
+                "displayName": "role",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "messages",
+                "displayName": "messages",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "timestamp",
+                "displayName": "timestamp",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.googleSheets",
+        "typeVersion": 4.7,
+        "position": [
+          1344,
+          -64
+        ],
+        "id": "21d49b90-e5ec-4575-b0cb-c726848a6b5d",
+        "name": "Save user message",
+        "credentials": {
+          "googleSheetsOAuth2Api": {
+            "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+            "name": "Google Sheets account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "mode": "combine",
+          "combineBy": "combineByPosition",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.merge",
+        "typeVersion": 3.2,
+        "position": [
+          1488,
+          -192
+        ],
+        "id": "9e458318-fe7a-417d-8e7c-85d936c55de6",
+        "name": "prepare final response"
+      },
+      {
+        "parameters": {
+          "operation": "append",
+          "documentId": {
+            "__rl": true,
+            "value": "YOUR_GOOGLE_SHEET_ID",
+            "mode": "list",
+            "cachedResultName": "AI Chat bot with memory",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit?usp=drivesdk"
+          },
+          "sheetName": {
+            "__rl": true,
+            "value": "gid=0",
+            "mode": "list",
+            "cachedResultName": "Messages",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit#gid=0"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "role": "assistant",
+              "ConversationId": "={{ $json.ConversationId }}",
+              "messages": "={{ $json.output }}",
+              "timestamp": "={{ $json.timestamp }}"
+            },
+            "matchingColumns": [],
+            "schema": [
+              {
+                "id": "ConversationId",
+                "displayName": "ConversationId",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "role",
+                "displayName": "role",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "messages",
+                "displayName": "messages",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "timestamp",
+                "displayName": "timestamp",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.googleSheets",
+        "typeVersion": 4.7,
+        "position": [
+          1632,
+          -80
+        ],
+        "id": "82b4b71f-2766-40d8-9bc4-f536d9ab803b",
+        "name": "Save Assistant Reply",
+        "credentials": {
+          "googleSheetsOAuth2Api": {
+            "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+            "name": "Google Sheets account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "respondWith": "allIncomingItems",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.5,
+        "position": [
+          1840,
+          -80
+        ],
+        "id": "88312cc9-c67e-42c9-8ca3-a945242fe029",
+        "name": "Return Chat Response"
+      },
+      {
+        "parameters": {
+          "content": "Welcome to the AI Website Chatbot with Memory!\n\nBefore running this workflow, complete the setup below:\n\n1. Configure your AI Model credentials.\n2. Connect your Google account.\n3. Create the required Google Sheet.\n4. Update the Google Sheet in all Google Sheets nodes.\n5. Activate the workflow.\n6. Test using the Webhook Test URL.\n7. Once working, switch to the Production URL for website integration.",
+          "color": 5
+        },
+        "type": "n8n-nodes-base.stickyNote",
+        "position": [
+          -160,
+          -272
+        ],
+        "typeVersion": 1,
+        "id": "a1640c2f-df1c-41e9-bbe4-b540be3a0b91",
+        "name": "Sticky Note"
+      },
+      {
+        "parameters": {
+          "content": "🤖 AI Configuration\nThis workflow uses an OpenAI-compatible chat model.\n\nRecommended Model:\n• NVIDIA OpenAI Compatible Model\n\nRequired:\n\n• NVIDIA API Key\n• Base URL\n• Model Name\n\nUpdate the Chat Model node with your credentials before testing.\n\nAny OpenAI-compatible provider can also be used by updating the credentials.",
+          "color": 5
+        },
+        "type": "n8n-nodes-base.stickyNote",
+        "position": [
+          816,
+          -288
+        ],
+        "typeVersion": 1,
+        "id": "d8d538e3-b30d-41ca-9f4f-e3c393b0279e",
+        "name": "Sticky Note1"
+      },
+      {
+        "parameters": {
+          "content": "📊 Conversation Memory\nCreate a Google Sheet named:\n\nMessages\n\nRequired Columns:\n\n• ConversationId\n• role\n• messages\n• timestamp\n\nConnect your Google account and select this sheet in all Google Sheets nodes.\n\nThis sheet stores the complete conversation history and enables chatbot memory.",
+          "color": 5
+        },
+        "type": "n8n-nodes-base.stickyNote",
+        "position": [
+          384,
+          -256
+        ],
+        "typeVersion": 1,
+        "id": "1fe76a7e-4a7a-4f07-8721-be44050c683f",
+        "name": "Sticky Note2"
+      },
+      {
+        "parameters": {
+          "content": "🌐 Webhook\nSend a POST request to the webhook.\n\nExample Request:\n\n{\n  \"conversationId\": \"abc123\",\n  \"message\": \"Hello\"\n}\n\nUse the same conversationId to continue an existing conversation.\n\nUse a different conversationId to start a new chat session.",
+          "color": 5
+        },
+        "type": "n8n-nodes-base.stickyNote",
+        "position": [
+          -112,
+          208
+        ],
+        "typeVersion": 1,
+        "id": "4e701972-6f95-4090-b695-16bf249ee04f",
+        "name": "Sticky Note3"
+      },
+      {
+        "parameters": {
+          "content": "• Keep the same conversationId for memory.\n• A new conversationId starts a new chat.\n• Do not modify the Google Sheet column names.\n• Keep the Respond to Webhook node connected.\n• Make sure the Webhook Response Mode is:\n  \"Using Respond to Webhook Node\"",
+          "color": 5
+        },
+        "type": "n8n-nodes-base.stickyNote",
+        "position": [
+          1440,
+          192
+        ],
+        "typeVersion": 1,
+        "id": "305d8d47-6b70-4036-9097-91ceff5b146b",
+        "name": "Sticky Note4"
+      }
+    ],
+    "connections": {
+      "OpenAI Chat Model": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "AI Chat Assitant",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Receive Chat Request": {
+        "main": [
+          [
+            {
+              "node": "Extract Request Data",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Extract Request Data": {
+        "main": [
+          [
+            {
+              "node": "Load Conversion Memory",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Load Conversion Memory": {
+        "main": [
+          [
+            {
+              "node": "Format Conversion History",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Format Conversion History": {
+        "main": [
+          [
+            {
+              "node": "AI Chat Assitant",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Merge AI node",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "AI Chat Assitant": {
+        "main": [
+          [
+            {
+              "node": "Merge AI node",
+              "type": "main",
+              "index": 1
+            },
+            {
+              "node": "prepare final response",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Merge AI node": {
+        "main": [
+          [
+            {
+              "node": "Save user message",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Save user message": {
+        "main": [
+          [
+            {
+              "node": "prepare final response",
+              "type": "main",
+              "index": 1
+            }
+          ]
+        ]
+      },
+      "prepare final response": {
+        "main": [
+          [
+            {
+              "node": "Save Assistant Reply",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Save Assistant Reply": {
+        "main": [
+          [
+            {
+              "node": "Return Chat Response",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Chandu M",
+    "name": "AI Website Chatbot with Memory",
+    "description": "added setup instructions",
+    "autosaved": true,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-07-02T06:23:07.725Z",
+        "id": 61,
+        "workflowId": "YOUR_WORKFLOW_ID",
+        "versionId": "42ff7f3f-e650-4a95-a015-aab67f391841",
+        "event": "activated",
+        "userId": "YOUR_USER_ID"
+      }
+    ]
+  },
+  "scopes": [
+    "execution:reveal",
+    "workflow:create",
+    "workflow:delete",
+    "workflow:disableRedaction",
+    "workflow:enableRedaction",
+    "workflow:execute",
+    "workflow:execute-chat",
+    "workflow:export",
+    "workflow:list",
+    "workflow:move",
+    "workflow:publish",
+    "workflow:read",
+    "workflow:share",
+    "workflow:unpublish",
+    "workflow:unshare",
+    "workflow:update"
+  ],
+  "checksum": "33168cbb1b18e160bb042d421d60d60f24ef8daf8180ab747bc2dec2618bc0b1"
+}
