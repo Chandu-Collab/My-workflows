@@ -1,0 +1,1359 @@
+{
+  "updatedAt": "2026-07-04T10:24:10.560Z",
+  "createdAt": "2026-07-03T07:54:26.131Z",
+  "id": "4MEay7lmPYNRFNIp",
+  "name": "Freelancer Invoice & Billing Automation",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "Freelance-Invoice-Automation",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "bf31074c-1cf3-4b8d-b505-cb501f095cc5",
+      "name": "Invoice Request",
+      "webhookId": "a3e7b8b1-1125-4165-87c0-c73820224fd5"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "34cbbd5f-8854-4c05-bc88-a99157150266",
+              "name": "clientName",
+              "value": "={{ $json.body.clientName }}",
+              "type": "string"
+            },
+            {
+              "id": "3a2a7f71-6203-45ec-9440-de0c205277bd",
+              "name": "email",
+              "value": "={{ $json.body.clientEmail }}",
+              "type": "string"
+            },
+            {
+              "id": "a8980491-89f1-460c-993c-1b9f83c27486",
+              "name": "company",
+              "value": "={{ $json.body.companyName }}",
+              "type": "string"
+            },
+            {
+              "id": "a2fd2807-70c2-4d37-92bc-56360a6c8597",
+              "name": "items",
+              "value": "={{ $json.body.items }}",
+              "type": "array"
+            },
+            {
+              "id": "4bd3decc-e781-4e6e-bbf3-46a4d8207fe5",
+              "name": "currency",
+              "value": "={{ $json.body.currency }}",
+              "type": "string"
+            },
+            {
+              "id": "59ab1ff8-9145-4867-bbe3-a7e7fc8181f1",
+              "name": "invoiceDate",
+              "value": "={{ $json.body.invoiceDate }}",
+              "type": "string"
+            },
+            {
+              "id": "688a6eb5-cf86-41e1-a0e9-332afa680777",
+              "name": "dueDate",
+              "value": "={{ $json.body.dueDate }}",
+              "type": "string"
+            },
+            {
+              "id": "e3794b29-7a7f-4ee5-a926-bbfdcc3619c9",
+              "name": "tax",
+              "value": "={{ $json.body.tax }}",
+              "type": "number"
+            },
+            {
+              "id": "9f294e15-ef24-4c23-9755-a09296326740",
+              "name": "notes",
+              "value": "={{ $json.body.notes }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "0ec25de1-a5b5-4ce7-b953-85a5e3e5cf19",
+      "name": "Client & Invoice Details"
+    },
+    {
+      "parameters": {
+        "jsCode": "const today = new Date();\n\nconst invoice =\n\"INV-\" +\ntoday.getFullYear() +\nString(today.getMonth()+1).padStart(2,\"0\") +\nString(today.getDate()).padStart(2,\"0\") +\n\"-\" +\nMath.floor(Math.random()*9000+1000);\n\nreturn [{\njson:{\n...$json,\ninvoiceNumber:invoice\n}\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "1624ea87-23a9-4bdb-a8d0-6e2a54de1925",
+      "name": "Generate Invoice Number"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $json.items || [];\nconst tax = Number($json.tax || 0);\n\n// Add line total to each item\nconst updatedItems = items.map(item => {\n  const quantity = Number(item.quantity);\n  const price = Number(item.price);\n\n  return {\n    ...item,\n    lineTotal: quantity * price\n  };\n});\n\n// Calculate subtotal\nconst subtotal = updatedItems.reduce((sum, item) => sum + item.lineTotal, 0);\n\n// Calculate tax\nconst taxAmount = subtotal * (tax / 100);\n\n// Grand total\nconst total = subtotal + taxAmount;\n\nreturn [\n  {\n    json: {\n      ...$json,\n      items: updatedItems,\n      subtotal,\n      taxAmount,\n      total\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "56eb3550-dd4d-4dd4-9ff7-cd3e09728a88",
+      "name": "Calculate Invoice Totals"
+    },
+    {
+      "parameters": {
+        "jsCode": "const {\n  clientName,\n  email,\n  company,\n  invoiceNumber,\n  invoiceDate,\n  dueDate,\n  currency,\n  items,\n  subtotal,\n  tax,\n  taxAmount,\n  total,\n  notes\n} = $json;\n\n// Currency Symbols\nconst currencySymbols = {\n  USD: \"$\",\n  INR: \"₹\",\n  EUR: \"€\",\n  GBP: \"£\"\n};\n\nconst symbol = currencySymbols[currency] || currency;\n\n// Generate Service Rows\nconst serviceRows = items.map(item => `\n<tr>\n    <td>${item.service}</td>\n    <td style=\"text-align:center;\">${item.quantity}</td>\n    <td style=\"text-align:right;\">${symbol}${item.price.toFixed(2)}</td>\n    <td style=\"text-align:right;\">${symbol}${item.lineTotal.toFixed(2)}</td>\n</tr>\n`).join(\"\");\n\nconst html = `\n<!DOCTYPE html>\n<html>\n\n<head>\n\n<meta charset=\"UTF-8\">\n\n<style>\n\nbody{\nfont-family:Arial,sans-serif;\nbackground:#f4f6f8;\npadding:40px;\n}\n\n.invoice{\n\nbackground:white;\n\nmax-width:900px;\n\nmargin:auto;\n\npadding:40px;\n\nborder-radius:10px;\n\nbox-shadow:0 0 15px rgba(0,0,0,.08);\n\n}\n\n.header{\n\ndisplay:flex;\n\njustify-content:space-between;\n\nalign-items:center;\n\nborder-bottom:3px solid #4F46E5;\n\npadding-bottom:20px;\n\nmargin-bottom:30px;\n\n}\n\n.logo{\n\nfont-size:34px;\n\nfont-weight:bold;\n\ncolor:#4F46E5;\n\n}\n\n.title{\n\nfont-size:30px;\n\nfont-weight:bold;\n\n}\n\n.info{\n\ndisplay:flex;\n\njustify-content:space-between;\n\nmargin-bottom:30px;\n\n}\n\n.info h3{\n\nmargin-bottom:8px;\n\n}\n\ntable{\n\nwidth:100%;\n\nborder-collapse:collapse;\n\nmargin-top:20px;\n\n}\n\nth{\n\nbackground:#4F46E5;\n\ncolor:white;\n\npadding:12px;\n\n}\n\ntd{\n\npadding:12px;\n\nborder-bottom:1px solid #ddd;\n\n}\n\ntr:nth-child(even){\n\nbackground:#fafafa;\n\n}\n\n.summary{\n\nmargin-top:30px;\n\nwidth:320px;\n\nmargin-left:auto;\n\n}\n\n.summary table{\n\nwidth:100%;\n\n}\n\n.summary td{\n\nborder:none;\n\npadding:8px;\n\n}\n\n.total{\n\nbackground:#4F46E5;\n\ncolor:white;\n\nfont-size:20px;\n\nfont-weight:bold;\n\n}\n\n.notes{\n\nmargin-top:50px;\n\npadding:20px;\n\nbackground:#F8F9FC;\n\nborder-left:5px solid #4F46E5;\n\n}\n\n.footer{\n\nmargin-top:50px;\n\ntext-align:center;\n\nfont-size:13px;\n\ncolor:#777;\n\n}\n\n</style>\n\n</head>\n\n<body>\n\n<div class=\"invoice\">\n\n<div class=\"header\">\n\n<div class=\"logo\">\n\nSHINKA AI\n\n</div>\n\n<div class=\"title\">\n\nINVOICE\n\n</div>\n\n</div>\n\n<div class=\"info\">\n\n<div>\n\n<h3>Bill To</h3>\n\n<strong>${clientName}</strong><br>\n\n${company}<br>\n\n${email}\n\n</div>\n\n<div style=\"text-align:right;\">\n\n<strong>Invoice #</strong><br>\n\n${invoiceNumber}<br><br>\n\n<strong>Invoice Date</strong><br>\n\n${invoiceDate}<br><br>\n\n<strong>Due Date</strong><br>\n\n${dueDate}\n\n</div>\n\n</div>\n\n<table>\n\n<thead>\n\n<tr>\n\n<th>Service</th>\n\n<th>Qty</th>\n\n<th>Price</th>\n\n<th>Total</th>\n\n</tr>\n\n</thead>\n\n<tbody>\n\n${serviceRows}\n\n</tbody>\n\n</table>\n\n<div class=\"summary\">\n\n<table>\n\n<tr>\n\n<td>Subtotal</td>\n\n<td style=\"text-align:right;\">${symbol}${subtotal.toFixed(2)}</td>\n\n</tr>\n\n<tr>\n\n<td>Tax (${tax}%)</td>\n\n<td style=\"text-align:right;\">${symbol}${taxAmount.toFixed(2)}</td>\n\n</tr>\n\n<tr class=\"total\">\n\n<td>Grand Total</td>\n\n<td style=\"text-align:right;\">${symbol}${total.toFixed(2)}</td>\n\n</tr>\n\n</table>\n\n</div>\n\n<div class=\"notes\">\n\n<strong>Notes</strong><br><br>\n\n${notes}\n\n</div>\n\n<div class=\"footer\">\n\nGenerated automatically by <strong>Shinka AI</strong><br>\n\nThank you for your business ❤️\n\n</div>\n\n</div>\n\n</body>\n\n</html>\n`;\n\nreturn [\n  {\n    json: {\n      ...$json,\n      html\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        0
+      ],
+      "id": "363280d4-61b8-4d6e-9c87-aafa3fbac473",
+      "name": "Generate Invoice HTML"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.pdfshift.io/v3/convert/pdf",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authentication",
+              "value": "Bearer YOUR_PDFSHIFT_API_KEY_HERE"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "source",
+              "value": "={{ $json.html }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "796f2a64-c05e-4cd2-95aa-0bbbb36de00d",
+      "name": "Generate PDF Invoice"
+    },
+    {
+      "parameters": {
+        "name": "result",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_DRIVE_FOLDER_ID",
+          "mode": "list",
+          "cachedResultName": "Day-11",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/YOUR_GOOGLE_DRIVE_FOLDER_ID"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1216,
+        -16
+      ],
+      "id": "e60e478e-9851-4494-beea-bbe777b7c959",
+      "name": "Upload Invoice to Google Drive",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "IGVkkLMBubF5zD5i",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1344,
+        -272
+      ],
+      "id": "c818211a-a07d-4c8b-883f-058cb0548207",
+      "name": "Merge Invoice & Drive Data"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEETS_DOCUMENT_ID",
+          "mode": "list",
+          "cachedResultName": "Day-11",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEETS_DOCUMENT_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEETS_DOCUMENT_ID/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Email": "={{ $json.email }}",
+            "Client Name": "={{ $json.clientName }}",
+            "Invoice Number": "={{ $json.invoiceNumber }}",
+            "Company": "={{ $json.company }}",
+            "Currency": "={{ $json.currency }}",
+            "Amount": "={{ $json.total }}",
+            "Tax": "={{ $json.tax }}",
+            "Tax Amount": "={{ $json.taxAmount }}",
+            "Subtotal": "={{ $json.subtotal }}",
+            "Invoice Date": "={{ $json.invoiceDate }}",
+            "Due Date": "={{ $json.dueDate }}",
+            "Status": "pending",
+            "Reminder Count": "0",
+            "PDF Name": "={{ $json.name }}",
+            "Google Drive File Id": "={{ $json.id }}",
+            "Drive view Link": "={{ $json.webViewLink }}",
+            "Drive Download Link": "={{ $json.webContentLink }}",
+            "Created At": "={{ $json.createdTime }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Invoice Number",
+              "displayName": "Invoice Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Client Name",
+              "displayName": "Client Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Company",
+              "displayName": "Company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Currency",
+              "displayName": "Currency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Amount",
+              "displayName": "Amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Tax",
+              "displayName": "Tax",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Tax Amount",
+              "displayName": "Tax Amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Subtotal",
+              "displayName": "Subtotal",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Invoice Date",
+              "displayName": "Invoice Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Due Date",
+              "displayName": "Due Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Reminder Count",
+              "displayName": "Reminder Count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Payment Date",
+              "displayName": "Payment Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Google Drive File Id",
+              "displayName": "Google Drive File Id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "PDF Name",
+              "displayName": "PDF Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Drive view Link",
+              "displayName": "Drive view Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Drive Download Link",
+              "displayName": "Drive Download Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Created At",
+              "displayName": "Created At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1424,
+        -16
+      ],
+      "id": "44fcb507-13ed-4a3c-8c0e-903fda36833e",
+      "name": "Save Invoice Record",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "XUo0YZXw282TEr36",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.Email }}",
+        "subject": "=Invoice {{ $json[\"Invoice Number\"] }} from Shinka AI",
+        "message": "=<!DOCTYPE html>\n<html>\n<body style=\"font-family: Arial, sans-serif; color: #333; line-height: 1.6;\">\n\n<p>Hi <strong>{{$json[\"Client Name\"]}}</strong>,</p>\n\n<p>I hope you're doing well.</p>\n\n<p>Thank you for choosing <strong>Shinka AI</strong>. Please find your invoice attached for the completed services.</p>\n\n<table style=\"border-collapse: collapse; margin:20px 0;\">\n<tr>\n<td><strong>Invoice Number</strong></td>\n<td style=\"padding-left:20px;\">{{$json[\"Invoice Number\"]}}</td>\n</tr>\n\n<tr>\n<td><strong>Company</strong></td>\n<td style=\"padding-left:20px;\">{{$json[\"Company\"]}}</td>\n</tr>\n\n<tr>\n<td><strong>Invoice Date</strong></td>\n<td style=\"padding-left:20px;\">{{$json[\"Invoice Date\"]}}</td>\n</tr>\n\n<tr>\n<td><strong>Due Date</strong></td>\n<td style=\"padding-left:20px;\">{{$json[\"Due Date\"]}}</td>\n</tr>\n\n<tr>\n<td><strong>Total Amount</strong></td>\n<td style=\"padding-left:20px;\"><strong>{{$json[\"Currency\"]}} {{$json[\"Amount\"]}}</strong></td>\n</tr>\n</table>\n\n<p>\nYou can also view or download your invoice anytime using the link below:\n</p>\n\n<p>\n<a href=\"{{$json[\"Drive view Link\"]}}\">\nView Invoice\n</a>\n</p>\n\n<p>\nIf you have already completed the payment, please disregard this email.\nOtherwise, we kindly request payment on or before the due date.\n</p>\n\n<p>\nIf you have any questions regarding this invoice, feel free to reply to this email.\n</p>\n\n<br>\n\n<p>\nThank you for your business. We truly appreciate the opportunity to work with you.\n</p>\n\n<p>\nBest Regards,<br>\n<strong>Shinka AI</strong><br>\nAI Automation Solutions\n</p>\n\n</body>\n</html>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1632,
+        -16
+      ],
+      "id": "5951cdcf-b948-4d5c-b798-af7bf9204c93",
+      "name": "Send Invoice Email",
+      "webhookId": "1cc49429-a489-4cc1-9f91-038cff96ce41",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "dJo19xe1bVod4Y6k",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "🤖 Freelancer Invoice & Billing Automation\n\nThis workflow automatically:\n• Generates a professional invoice number\n• Calculates totals and taxes\n• Creates a branded HTML invoice\n• Converts it to a PDF\n• Uploads the PDF to Google Drive\n• Saves invoice records to Google Sheets\n• Emails the invoice to the client\n\nPhase 1:\n✔ Invoice Generation\n✔ PDF Creation\n✔ Google Drive Storage\n✔ Google Sheets Tracking\n✔ Email Delivery\n\nPhase 2:\n• Payment Tracking\n• Automatic Follow-up Reminders\n• WhatsApp Notifications\n• Payment Gateway Integration\n• Invoice Analytics Dashboard",
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -64,
+        -432
+      ],
+      "typeVersion": 1,
+      "id": "64215d7b-c98a-49d5-912b-6fb6ac336691",
+      "name": "Sticky Note"
+    }
+  ],
+  "connections": {
+    "Invoice Request": {
+      "main": [
+        [
+          {
+            "node": "Client & Invoice Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Client & Invoice Details": {
+      "main": [
+        [
+          {
+            "node": "Generate Invoice Number",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Invoice Number": {
+      "main": [
+        [
+          {
+            "node": "Calculate Invoice Totals",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Invoice Totals": {
+      "main": [
+        [
+          {
+            "node": "Generate Invoice HTML",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Invoice & Drive Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Invoice HTML": {
+      "main": [
+        [
+          {
+            "node": "Generate PDF Invoice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate PDF Invoice": {
+      "main": [
+        [
+          {
+            "node": "Upload Invoice to Google Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Invoice to Google Drive": {
+      "main": [
+        [
+          {
+            "node": "Merge Invoice & Drive Data",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Invoice & Drive Data": {
+      "main": [
+        [
+          {
+            "node": "Save Invoice Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Invoice Record": {
+      "main": [
+        [
+          {
+            "node": "Send Invoice Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Invoice Email": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "pinData": {},
+  "versionId": "e6bc8c21-4ba4-40bf-a637-c2e5213c3c70",
+  "activeVersionId": "e6bc8c21-4ba4-40bf-a637-c2e5213c3c70",
+  "versionCounter": 185,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-07-03T07:54:26.139Z",
+      "createdAt": "2026-07-03T07:54:26.139Z",
+      "role": "workflow:owner",
+      "workflowId": "4MEay7lmPYNRFNIp",
+      "projectId": "loWf0mBs1xKuh5N3",
+      "project": {
+        "updatedAt": "2026-06-04T07:55:05.260Z",
+        "createdAt": "2026-06-04T07:52:41.897Z",
+        "id": "loWf0mBs1xKuh5N3",
+        "name": "Chandu M <chandouqiande@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "8d994dc9-eaab-443f-93bf-ef4aa823f36d"
+      }
+    }
+  ],
+  "tags": [
+    {
+      "updatedAt": "2026-07-04T10:17:05.141Z",
+      "createdAt": "2026-07-04T10:17:05.141Z",
+      "id": "9hS43BRXgyQvqEXh",
+      "name": "Freelancer"
+    },
+    {
+      "updatedAt": "2026-07-04T10:17:09.315Z",
+      "createdAt": "2026-07-04T10:17:09.315Z",
+      "id": "Do7GsQW93AJDshVe",
+      "name": "Billing"
+    },
+    {
+      "updatedAt": "2026-06-09T06:33:49.072Z",
+      "createdAt": "2026-06-09T06:33:49.072Z",
+      "id": "FnmrzqRNVEcarKLc",
+      "name": "workflow"
+    },
+    {
+      "updatedAt": "2026-07-04T10:17:01.688Z",
+      "createdAt": "2026-07-04T10:17:01.688Z",
+      "id": "J3d1b1njaAorpi33",
+      "name": "Invoice"
+    },
+    {
+      "updatedAt": "2026-06-09T06:33:22.379Z",
+      "createdAt": "2026-06-09T06:33:22.379Z",
+      "id": "aM91rNGq256NAUAN",
+      "name": "automation"
+    },
+    {
+      "updatedAt": "2026-07-04T10:17:37.850Z",
+      "createdAt": "2026-07-04T10:17:37.850Z",
+      "id": "v6zF8KVBmdpNbOMZ",
+      "name": "Finance"
+    }
+  ],
+  "parentFolder": null,
+  "activeVersion": {
+    "updatedAt": "2026-07-04T10:24:44.000Z",
+    "createdAt": "2026-07-04T10:24:10.565Z",
+    "versionId": "e6bc8c21-4ba4-40bf-a637-c2e5213c3c70",
+    "workflowId": "4MEay7lmPYNRFNIp",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "Freelance-Invoice-Automation",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          0,
+          0
+        ],
+        "id": "bf31074c-1cf3-4b8d-b505-cb501f095cc5",
+        "name": "Invoice Request",
+        "webhookId": "a3e7b8b1-1125-4165-87c0-c73820224fd5"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "34cbbd5f-8854-4c05-bc88-a99157150266",
+                "name": "clientName",
+                "value": "={{ $json.body.clientName }}",
+                "type": "string"
+              },
+              {
+                "id": "3a2a7f71-6203-45ec-9440-de0c205277bd",
+                "name": "email",
+                "value": "={{ $json.body.clientEmail }}",
+                "type": "string"
+              },
+              {
+                "id": "a8980491-89f1-460c-993c-1b9f83c27486",
+                "name": "company",
+                "value": "={{ $json.body.companyName }}",
+                "type": "string"
+              },
+              {
+                "id": "a2fd2807-70c2-4d37-92bc-56360a6c8597",
+                "name": "items",
+                "value": "={{ $json.body.items }}",
+                "type": "array"
+              },
+              {
+                "id": "4bd3decc-e781-4e6e-bbf3-46a4d8207fe5",
+                "name": "currency",
+                "value": "={{ $json.body.currency }}",
+                "type": "string"
+              },
+              {
+                "id": "59ab1ff8-9145-4867-bbe3-a7e7fc8181f1",
+                "name": "invoiceDate",
+                "value": "={{ $json.body.invoiceDate }}",
+                "type": "string"
+              },
+              {
+                "id": "688a6eb5-cf86-41e1-a0e9-332afa680777",
+                "name": "dueDate",
+                "value": "={{ $json.body.dueDate }}",
+                "type": "string"
+              },
+              {
+                "id": "e3794b29-7a7f-4ee5-a926-bbfdcc3619c9",
+                "name": "tax",
+                "value": "={{ $json.body.tax }}",
+                "type": "number"
+              },
+              {
+                "id": "9f294e15-ef24-4c23-9755-a09296326740",
+                "name": "notes",
+                "value": "={{ $json.body.notes }}",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          208,
+          0
+        ],
+        "id": "0ec25de1-a5b5-4ce7-b953-85a5e3e5cf19",
+        "name": "Client & Invoice Details"
+      },
+      {
+        "parameters": {
+          "jsCode": "const today = new Date();\n\nconst invoice =\n\"INV-\" +\ntoday.getFullYear() +\nString(today.getMonth()+1).padStart(2,\"0\") +\nString(today.getDate()).padStart(2,\"0\") +\n\"-\" +\nMath.floor(Math.random()*9000+1000);\n\nreturn [{\njson:{\n...$json,\ninvoiceNumber:invoice\n}\n}];"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          416,
+          0
+        ],
+        "id": "1624ea87-23a9-4bdb-a8d0-6e2a54de1925",
+        "name": "Generate Invoice Number"
+      },
+      {
+        "parameters": {
+          "jsCode": "const items = $json.items || [];\nconst tax = Number($json.tax || 0);\n\n// Add line total to each item\nconst updatedItems = items.map(item => {\n  const quantity = Number(item.quantity);\n  const price = Number(item.price);\n\n  return {\n    ...item,\n    lineTotal: quantity * price\n  };\n});\n\n// Calculate subtotal\nconst subtotal = updatedItems.reduce((sum, item) => sum + item.lineTotal, 0);\n\n// Calculate tax\nconst taxAmount = subtotal * (tax / 100);\n\n// Grand total\nconst total = subtotal + taxAmount;\n\nreturn [\n  {\n    json: {\n      ...$json,\n      items: updatedItems,\n      subtotal,\n      taxAmount,\n      total\n    }\n  }\n];"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          624,
+          0
+        ],
+        "id": "56eb3550-dd4d-4dd4-9ff7-cd3e09728a88",
+        "name": "Calculate Invoice Totals"
+      },
+      {
+        "parameters": {
+          "jsCode": "const {\n  clientName,\n  email,\n  company,\n  invoiceNumber,\n  invoiceDate,\n  dueDate,\n  currency,\n  items,\n  subtotal,\n  tax,\n  taxAmount,\n  total,\n  notes\n} = $json;\n\n// Currency Symbols\nconst currencySymbols = {\n  USD: \"$\",\n  INR: \"₹\",\n  EUR: \"€\",\n  GBP: \"£\"\n};\n\nconst symbol = currencySymbols[currency] || currency;\n\n// Generate Service Rows\nconst serviceRows = items.map(item => `\n<tr>\n    <td>${item.service}</td>\n    <td style=\"text-align:center;\">${item.quantity}</td>\n    <td style=\"text-align:right;\">${symbol}${item.price.toFixed(2)}</td>\n    <td style=\"text-align:right;\">${symbol}${item.lineTotal.toFixed(2)}</td>\n</tr>\n`).join(\"\");\n\nconst html = `\n<!DOCTYPE html>\n<html>\n\n<head>\n\n<meta charset=\"UTF-8\">\n\n<style>\n\nbody{\nfont-family:Arial,sans-serif;\nbackground:#f4f6f8;\npadding:40px;\n}\n\n.invoice{\n\nbackground:white;\n\nmax-width:900px;\n\nmargin:auto;\n\npadding:40px;\n\nborder-radius:10px;\n\nbox-shadow:0 0 15px rgba(0,0,0,.08);\n\n}\n\n.header{\n\ndisplay:flex;\n\njustify-content:space-between;\n\nalign-items:center;\n\nborder-bottom:3px solid #4F46E5;\n\npadding-bottom:20px;\n\nmargin-bottom:30px;\n\n}\n\n.logo{\n\nfont-size:34px;\n\nfont-weight:bold;\n\ncolor:#4F46E5;\n\n}\n\n.title{\n\nfont-size:30px;\n\nfont-weight:bold;\n\n}\n\n.info{\n\ndisplay:flex;\n\njustify-content:space-between;\n\nmargin-bottom:30px;\n\n}\n\n.info h3{\n\nmargin-bottom:8px;\n\n}\n\ntable{\n\nwidth:100%;\n\nborder-collapse:collapse;\n\nmargin-top:20px;\n\n}\n\nth{\n\nbackground:#4F46E5;\n\ncolor:white;\n\npadding:12px;\n\n}\n\ntd{\n\npadding:12px;\n\nborder-bottom:1px solid #ddd;\n\n}\n\ntr:nth-child(even){\n\nbackground:#fafafa;\n\n}\n\n.summary{\n\nmargin-top:30px;\n\nwidth:320px;\n\nmargin-left:auto;\n\n}\n\n.summary table{\n\nwidth:100%;\n\n}\n\n.summary td{\n\nborder:none;\n\npadding:8px;\n\n}\n\n.total{\n\nbackground:#4F46E5;\n\ncolor:white;\n\nfont-size:20px;\n\nfont-weight:bold;\n\n}\n\n.notes{\n\nmargin-top:50px;\n\npadding:20px;\n\nbackground:#F8F9FC;\n\nborder-left:5px solid #4F46E5;\n\n}\n\n.footer{\n\nmargin-top:50px;\n\ntext-align:center;\n\nfont-size:13px;\n\ncolor:#777;\n\n}\n\n</style>\n\n</head>\n\n<body>\n\n<div class=\"invoice\">\n\n<div class=\"header\">\n\n<div class=\"logo\">\n\nSHINKA AI\n\n</div>\n\n<div class=\"title\">\n\nINVOICE\n\n</div>\n\n</div>\n\n<div class=\"info\">\n\n<div>\n\n<h3>Bill To</h3>\n\n<strong>${clientName}</strong><br>\n\n${company}<br>\n\n${email}\n\n</div>\n\n<div style=\"text-align:right;\">\n\n<strong>Invoice #</strong><br>\n\n${invoiceNumber}<br><br>\n\n<strong>Invoice Date</strong><br>\n\n${invoiceDate}<br><br>\n\n<strong>Due Date</strong><br>\n\n${dueDate}\n\n</div>\n\n</div>\n\n<table>\n\n<thead>\n\n<tr>\n\n<th>Service</th>\n\n<th>Qty</th>\n\n<th>Price</th>\n\n<th>Total</th>\n\n</tr>\n\n</thead>\n\n<tbody>\n\n${serviceRows}\n\n</tbody>\n\n</table>\n\n<div class=\"summary\">\n\n<table>\n\n<tr>\n\n<td>Subtotal</td>\n\n<td style=\"text-align:right;\">${symbol}${subtotal.toFixed(2)}</td>\n\n</tr>\n\n<tr>\n\n<td>Tax (${tax}%)</td>\n\n<td style=\"text-align:right;\">${symbol}${taxAmount.toFixed(2)}</td>\n\n</tr>\n\n<tr class=\"total\">\n\n<td>Grand Total</td>\n\n<td style=\"text-align:right;\">${symbol}${total.toFixed(2)}</td>\n\n</tr>\n\n</table>\n\n</div>\n\n<div class=\"notes\">\n\n<strong>Notes</strong><br><br>\n\n${notes}\n\n</div>\n\n<div class=\"footer\">\n\nGenerated automatically by <strong>Shinka AI</strong><br>\n\nThank you for your business ❤️\n\n</div>\n\n</div>\n\n</body>\n\n</html>\n`;\n\nreturn [\n  {\n    json: {\n      ...$json,\n      html\n    }\n  }\n];"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          832,
+          0
+        ],
+        "id": "363280d4-61b8-4d6e-9c87-aafa3fbac473",
+        "name": "Generate Invoice HTML"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.pdfshift.io/v3/convert/pdf",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "Authentication",
+                "value": "Bearer YOUR_PDFSHIFT_API_KEY_HERE"
+              }
+            ]
+          },
+          "sendBody": true,
+          "bodyParameters": {
+            "parameters": [
+              {
+                "name": "source",
+                "value": "={{ $json.html }}"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {
+                "fullResponse": true,
+                "responseFormat": "file"
+              }
+            }
+          }
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1040,
+          0
+        ],
+        "id": "796f2a64-c05e-4cd2-95aa-0bbbb36de00d",
+        "name": "Generate PDF Invoice"
+      },
+      {
+        "parameters": {
+          "name": "result",
+          "driveId": {
+            "__rl": true,
+            "mode": "list",
+            "value": "My Drive"
+          },
+          "folderId": {
+            "__rl": true,
+            "value": "YOUR_GOOGLE_DRIVE_FOLDER_ID",
+            "mode": "list",
+            "cachedResultName": "Day-11",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/YOUR_GOOGLE_DRIVE_FOLDER_ID"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.googleDrive",
+        "typeVersion": 3,
+        "position": [
+          1216,
+          -16
+        ],
+        "id": "e60e478e-9851-4494-beea-bbe777b7c959",
+        "name": "Upload Invoice to Google Drive",
+        "credentials": {
+          "googleDriveOAuth2Api": {
+            "id": "IGVkkLMBubF5zD5i",
+            "name": "Google Drive account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "mode": "combine",
+          "combineBy": "combineByPosition",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.merge",
+        "typeVersion": 3.2,
+        "position": [
+          1344,
+          -272
+        ],
+        "id": "c818211a-a07d-4c8b-883f-058cb0548207",
+        "name": "Merge Invoice & Drive Data"
+      },
+      {
+        "parameters": {
+          "operation": "append",
+          "documentId": {
+            "__rl": true,
+            "value": "YOUR_GOOGLE_SHEETS_DOCUMENT_ID",
+            "mode": "list",
+            "cachedResultName": "Day-11",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEETS_DOCUMENT_ID/edit?usp=drivesdk"
+          },
+          "sheetName": {
+            "__rl": true,
+            "value": "gid=0",
+            "mode": "list",
+            "cachedResultName": "Sheet1",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEETS_DOCUMENT_ID/edit#gid=0"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "Email": "={{ $json.email }}",
+              "Client Name": "={{ $json.clientName }}",
+              "Invoice Number": "={{ $json.invoiceNumber }}",
+              "Company": "={{ $json.company }}",
+              "Currency": "={{ $json.currency }}",
+              "Amount": "={{ $json.total }}",
+              "Tax": "={{ $json.tax }}",
+              "Tax Amount": "={{ $json.taxAmount }}",
+              "Subtotal": "={{ $json.subtotal }}",
+              "Invoice Date": "={{ $json.invoiceDate }}",
+              "Due Date": "={{ $json.dueDate }}",
+              "Status": "pending",
+              "Reminder Count": "0",
+              "PDF Name": "={{ $json.name }}",
+              "Google Drive File Id": "={{ $json.id }}",
+              "Drive view Link": "={{ $json.webViewLink }}",
+              "Drive Download Link": "={{ $json.webContentLink }}",
+              "Created At": "={{ $json.createdTime }}"
+            },
+            "matchingColumns": [],
+            "schema": [
+              {
+                "id": "Invoice Number",
+                "displayName": "Invoice Number",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Client Name",
+                "displayName": "Client Name",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Company",
+                "displayName": "Company",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Email",
+                "displayName": "Email",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Currency",
+                "displayName": "Currency",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Amount",
+                "displayName": "Amount",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Tax",
+                "displayName": "Tax",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Tax Amount",
+                "displayName": "Tax Amount",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Subtotal",
+                "displayName": "Subtotal",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Invoice Date",
+                "displayName": "Invoice Date",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Due Date",
+                "displayName": "Due Date",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Status",
+                "displayName": "Status",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Reminder Count",
+                "displayName": "Reminder Count",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Payment Date",
+                "displayName": "Payment Date",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Google Drive File Id",
+                "displayName": "Google Drive File Id",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "PDF Name",
+                "displayName": "PDF Name",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Drive view Link",
+                "displayName": "Drive view Link",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Drive Download Link",
+                "displayName": "Drive Download Link",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Created At",
+                "displayName": "Created At",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.googleSheets",
+        "typeVersion": 4.7,
+        "position": [
+          1424,
+          -16
+        ],
+        "id": "44fcb507-13ed-4a3c-8c0e-903fda36833e",
+        "name": "Save Invoice Record",
+        "credentials": {
+          "googleSheetsOAuth2Api": {
+            "id": "XUo0YZXw282TEr36",
+            "name": "Google Sheets account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "sendTo": "={{ $json.Email }}",
+          "subject": "=Invoice {{ $json[\"Invoice Number\"] }} from Shinka AI",
+          "message": "=<!DOCTYPE html>\n<html>\n<body style=\"font-family: Arial, sans-serif; color: #333; line-height: 1.6;\">\n\n<p>Hi <strong>{{$json[\"Client Name\"]}}</strong>,</p>\n\n<p>I hope you're doing well.</p>\n\n<p>Thank you for choosing <strong>Shinka AI</strong>. Please find your invoice attached for the completed services.</p>\n\n<table style=\"border-collapse: collapse; margin:20px 0;\">\n<tr>\n<td><strong>Invoice Number</strong></td>\n<td style=\"padding-left:20px;\">{{$json[\"Invoice Number\"]}}</td>\n</tr>\n\n<tr>\n<td><strong>Company</strong></td>\n<td style=\"padding-left:20px;\">{{$json[\"Company\"]}}</td>\n</tr>\n\n<tr>\n<td><strong>Invoice Date</strong></td>\n<td style=\"padding-left:20px;\">{{$json[\"Invoice Date\"]}}</td>\n</tr>\n\n<tr>\n<td><strong>Due Date</strong></td>\n<td style=\"padding-left:20px;\">{{$json[\"Due Date\"]}}</td>\n</tr>\n\n<tr>\n<td><strong>Total Amount</strong></td>\n<td style=\"padding-left:20px;\"><strong>{{$json[\"Currency\"]}} {{$json[\"Amount\"]}}</strong></td>\n</tr>\n</table>\n\n<p>\nYou can also view or download your invoice anytime using the link below:\n</p>\n\n<p>\n<a href=\"{{$json[\"Drive view Link\"]}}\">\nView Invoice\n</a>\n</p>\n\n<p>\nIf you have already completed the payment, please disregard this email.\nOtherwise, we kindly request payment on or before the due date.\n</p>\n\n<p>\nIf you have any questions regarding this invoice, feel free to reply to this email.\n</p>\n\n<br>\n\n<p>\nThank you for your business. We truly appreciate the opportunity to work with you.\n</p>\n\n<p>\nBest Regards,<br>\n<strong>Shinka AI</strong><br>\nAI Automation Solutions\n</p>\n\n</body>\n</html>",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.2,
+        "position": [
+          1632,
+          -16
+        ],
+        "id": "5951cdcf-b948-4d5c-b798-af7bf9204c93",
+        "name": "Send Invoice Email",
+        "webhookId": "1cc49429-a489-4cc1-9f91-038cff96ce41",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "dJo19xe1bVod4Y6k",
+            "name": "Gmail account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "content": "🤖 Freelancer Invoice & Billing Automation\n\nThis workflow automatically:\n• Generates a professional invoice number\n• Calculates totals and taxes\n• Creates a branded HTML invoice\n• Converts it to a PDF\n• Uploads the PDF to Google Drive\n• Saves invoice records to Google Sheets\n• Emails the invoice to the client\n\nPhase 1:\n✔ Invoice Generation\n✔ PDF Creation\n✔ Google Drive Storage\n✔ Google Sheets Tracking\n✔ Email Delivery\n\nPhase 2:\n• Payment Tracking\n• Automatic Follow-up Reminders\n• WhatsApp Notifications\n• Payment Gateway Integration\n• Invoice Analytics Dashboard",
+          "color": 6
+        },
+        "type": "n8n-nodes-base.stickyNote",
+        "position": [
+          -64,
+          -432
+        ],
+        "typeVersion": 1,
+        "id": "64215d7b-c98a-49d5-912b-6fb6ac336691",
+        "name": "Sticky Note"
+      }
+    ],
+    "connections": {
+      "Invoice Request": {
+        "main": [
+          [
+            {
+              "node": "Client & Invoice Details",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Client & Invoice Details": {
+        "main": [
+          [
+            {
+              "node": "Generate Invoice Number",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Generate Invoice Number": {
+        "main": [
+          [
+            {
+              "node": "Calculate Invoice Totals",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Calculate Invoice Totals": {
+        "main": [
+          [
+            {
+              "node": "Generate Invoice HTML",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Merge Invoice & Drive Data",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Generate Invoice HTML": {
+        "main": [
+          [
+            {
+              "node": "Generate PDF Invoice",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Generate PDF Invoice": {
+        "main": [
+          [
+            {
+              "node": "Upload Invoice to Google Drive",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Upload Invoice to Google Drive": {
+        "main": [
+          [
+            {
+              "node": "Merge Invoice & Drive Data",
+              "type": "main",
+              "index": 1
+            }
+          ]
+        ]
+      },
+      "Merge Invoice & Drive Data": {
+        "main": [
+          [
+            {
+              "node": "Save Invoice Record",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Save Invoice Record": {
+        "main": [
+          [
+            {
+              "node": "Send Invoice Email",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Send Invoice Email": {
+        "main": [
+          []
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Chandu M",
+    "name": "Freelancer Invoice & Billing Automation",
+    "description": "Trying to use respond to webhhook at last but felt not required so removed it",
+    "autosaved": true,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-07-04T10:24:44.279Z",
+        "id": 65,
+        "workflowId": "4MEay7lmPYNRFNIp",
+        "versionId": "e6bc8c21-4ba4-40bf-a637-c2e5213c3c70",
+        "event": "activated",
+        "userId": "8d994dc9-eaab-443f-93bf-ef4aa823f36d"
+      }
+    ]
+  },
+  "scopes": [
+    "execution:reveal",
+    "workflow:create",
+    "workflow:delete",
+    "workflow:disableRedaction",
+    "workflow:enableRedaction",
+    "workflow:execute",
+    "workflow:execute-chat",
+    "workflow:export",
+    "workflow:list",
+    "workflow:move",
+    "workflow:publish",
+    "workflow:read",
+    "workflow:share",
+    "workflow:unpublish",
+    "workflow:unshare",
+    "workflow:update"
+  ],
+  "checksum": "ad31897f462c4ec3da4e299237e5ac9122ff8785c1b66ae31b81e149a4051f9d"
+}
