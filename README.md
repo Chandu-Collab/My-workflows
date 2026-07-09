@@ -19,7 +19,7 @@
 
 ## 🔥 Workflows
 
-### 📧 AI Cold Email Personalization Engine (NEW 🔥)
+### 📧 AI Cold Email Personalization Engine
 
 Automates personalized B2B outreach by researching a company's website, analyzing its business using AI, and generating a tailored outreach email.
 
@@ -34,7 +34,7 @@ Automates personalized B2B outreach by researching a company's website, analyzin
 
 ---
 
-### 📝 AI Meeting Notes → Action Items Generator (NEW 🔥)
+### 📝 AI Meeting Notes → Action Items Generator
 
 Automatically analyzes meeting transcripts using AI to extract summaries, key decisions, and action items, then logs them and sends a summary email.
 
@@ -48,7 +48,7 @@ Automatically analyzes meeting transcripts using AI to extract summaries, key de
 
 ---
 
-### 💬 AI Instagram DM → Lead Capture & Qualification System (NEW 🔥)
+### 💬 AI Instagram DM → Lead Capture & Qualification System
 
 Automatically captures Instagram direct messages, analyzes user intent using AI, and classifies leads into hot, warm, or cold categories.
 
@@ -63,7 +63,7 @@ Automatically captures Instagram direct messages, analyzes user intent using AI,
 
 ---
 
-### 🌍 Multilingual AI Customer Support Bot (NEW 🔥)
+### 🌍 Multilingual AI Customer Support Bot
 
 Automates customer support using AI agents with multilingual capabilities.
 
@@ -109,7 +109,7 @@ Transforms a single YouTube video into multiple types of content automatically u
 
 ---
 
-### 📊 AI Business Insights & Alert System (NEW 🔥)
+### 📊 AI Business Insights & Alert System
 
 Fetches daily business data from Google Sheets, analyzes it using an AI agent, and sends actionable insights via email.
 
@@ -123,7 +123,7 @@ Fetches daily business data from Google Sheets, analyzes it using an AI agent, a
 
 ---
 
-### 📦 AI Order Priority & Notification System (NEW 🔥)
+### 📦 AI Order Priority & Notification System
 
 Automatically processes incoming orders, assigns priority using an AI agent based on order value and delivery type, and sends timely notifications.
 
@@ -134,6 +134,21 @@ Automatically processes incoming orders, assigns priority using an AI agent base
 - 📧 Automated priority-based email alerts via Gmail
 
 📁 **Folder:** [AI Order Priority & Notification System](./workflows/AI%20Order%20Priority%20&%20Notification%20System/)
+
+---
+
+### 🐞 AI Bug Report Auto Ticket System (NEW 🔥)
+
+Automatically convert bug reports into structured engineering tickets using AI.
+
+✨ **Features:**
+- 📥 Receives bug reports via Webhook
+- 🤖 AI-powered bug analysis, category detection, and severity classification
+- 📝 Automatically generates structured engineering tickets
+- 📊 Logs tickets to Google Sheets
+- 📧 Sends confirmation emails automatically
+
+📁 **Folder:** [AI Bug Report Auto Ticket System](./workflows/AI%20Bug%20Report%20Auto%20Ticket%20System/)
 
 ---
 
@@ -172,6 +187,7 @@ ai-automation-workflows/
 ├── workflows/ai-youtube-content-repurposer/
 ├── workflows/ai-business-insights-n8n/
 ├── workflows/AI Order Priority & Notification System/
+├── workflows/AI Bug Report Auto Ticket System/
 ```
 
 ---
