@@ -1,0 +1,1411 @@
+{
+  "updatedAt": "2026-07-07T06:52:40.268Z",
+  "createdAt": "2026-07-07T05:20:36.130Z",
+  "id": "PBccACeTV9MXOA88",
+  "name": "AI Bug Report Auto Ticket System",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "openai/gpt-oss-20b",
+          "mode": "list",
+          "cachedResultName": "openai/gpt-oss-20b"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        272,
+        208
+      ],
+      "id": "00d4e0fd-b0f2-432b-a5da-9efb672eb59d",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "AI Bug Reporter",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "325b79c9-70f1-4bf4-b9ea-3576eee3f92c",
+      "name": "Bug Report Webhook",
+      "webhookId": "YOUR_WEBHOOK_ID"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "36d9b26b-3d90-4e73-9958-23646a44b439",
+              "name": "reporter_name",
+              "value": "={{ $json.body.reporter_name }}",
+              "type": "string"
+            },
+            {
+              "id": "40b5c160-ac15-431e-b89e-53e0abe20ba3",
+              "name": "reporter_email",
+              "value": "={{ $json.body.reporter_email }}",
+              "type": "string"
+            },
+            {
+              "id": "16ea4c2e-8203-4da7-be41-5d07abcc1c13",
+              "name": "application",
+              "value": "={{ $json.body.application }}",
+              "type": "string"
+            },
+            {
+              "id": "f4e0310a-8330-4421-b3ae-411d8980e849",
+              "name": "environment",
+              "value": "={{ $json.body.environment }}",
+              "type": "string"
+            },
+            {
+              "id": "bf002b65-b1e4-4e5c-9696-f824b14a50d0",
+              "name": "browser",
+              "value": "={{ $json.body.browser }}",
+              "type": "string"
+            },
+            {
+              "id": "933457f5-1b17-48ce-8b3d-6e84363cf221",
+              "name": "device",
+              "value": "={{ $json.body.device }}",
+              "type": "string"
+            },
+            {
+              "id": "51271240-5262-4cad-9d70-dc764b68c09c",
+              "name": "page_url",
+              "value": "={{ $json.body.page_url }}",
+              "type": "string"
+            },
+            {
+              "id": "49d95bfd-a598-4a9b-8319-863b78558eb1",
+              "name": "bug_title",
+              "value": "={{ $json.body.bug_title }}",
+              "type": "string"
+            },
+            {
+              "id": "2869b8d0-ba3b-4517-9dd4-45400d340167",
+              "name": "bug_description",
+              "value": "={{ $json.body.bug_description }}",
+              "type": "string"
+            },
+            {
+              "id": "be75e8c7-cfbf-4e3b-8a0e-d2398e0fecf9",
+              "name": "steps_to_reproduce",
+              "value": "={{ $json.body.steps_to_reproduce }}",
+              "type": "string"
+            },
+            {
+              "id": "699a51c8-23c9-4e40-9c4c-00f36ebec930",
+              "name": "expected_result",
+              "value": "={{ $json.body.expected_result }}",
+              "type": "string"
+            },
+            {
+              "id": "688aa533-8e54-43b1-8854-89dba44f23b4",
+              "name": "actual_result",
+              "value": "={{ $json.body.actual_result }}",
+              "type": "string"
+            },
+            {
+              "id": "d05959dc-b4a3-46ee-81d1-5530c6b240f5",
+              "name": "attachment",
+              "value": "={{ $json.body.attachment }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "78b050f2-9ff0-4dc3-af2e-8c5c546cee12",
+      "name": "Prepare Bug Report"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyze the following bug report and generate a structured engineering ticket.\n\nReporter Name:\n{{ $json.reporter_name }}\n\nReporter Email:\n{{ $json.reporter_email }}\n\nApplication:\n{{ $json.application }}\n\nEnvironment:\n{{ $json.environment }}\n\nBrowser:\n{{ $json.browser }}\n\nDevice:\n{{ $json.device }}\n\nPage URL:\n{{ $json.page_url }}\n\nBug Title:\n{{ $json.bug_title }}\n\nBug Description:\n{{ $json.bug_description }}\n\nSteps to Reproduce:\n{{ $json.steps_to_reproduce }}\n\nExpected Result:\n{{ $json.expected_result }}\n\nActual Result:\n{{ $json.actual_result }}\n\nAttachment:\n{{ $json.attachment }}\n\nReturn the response as structured JSON only.",
+        "options": {
+          "systemMessage": "You are an experienced Senior QA Engineer and Software Support Analyst.\n\nYour responsibility is to analyze bug reports submitted by users and convert them into structured engineering tickets.\n\nCarefully analyze the provided information including the bug title, description, reproduction steps, expected result, actual result, environment, browser, device, and application.\n\nYour tasks are:\n\n1. Write a short technical summary of the bug.\n2. Classify the bug into ONE category:\n   - Frontend\n   - Backend\n   - API\n   - Authentication\n   - Database\n   - Payment\n   - Performance\n   - Security\n   - Mobile\n   - Infrastructure\n   - DevOps\n   - Other\n\n3. Determine the severity:\n   - Critical\n   - High\n   - Medium\n   - Low\n\n4. Determine the priority:\n   - P0\n   - P1\n   - P2\n   - P3\n\n5. Explain the business impact.\n\n6. Suggest the most likely root cause based only on the provided information. If uncertain, clearly state that it is an educated guess.\n\n7. Rewrite the bug into a professional engineering description.\n\n8. Improve the reproduction steps if needed.\n\n9. Generate clear acceptance criteria that developers can use to verify the fix.\n\n10. Recommend the responsible team:\n   - Frontend Team\n   - Backend Team\n   - Mobile Team\n   - DevOps Team\n   - Security Team\n   - QA Team\n\n11. Generate relevant tags.\n\n12. Estimate your confidence in your analysis from 0 to 100.\n\nReturn it as:\n\n\"confidence\": 95\n\nClassification Guidelines:\n\nCritical:\n- Complete application outage\n- Login unavailable for all users\n- Payment failure\n- Security vulnerability\n- Database failure\n- Data loss\n\nHigh:\n- Major feature broken\n- Many users affected\n- API failures\n- Authentication problems\n\nMedium:\n- Feature partially works\n- Performance issues\n- Incorrect calculations\n\nLow:\n- UI issues\n- Typographical errors\n- Cosmetic issues\n- Minor usability problems\n\nReturn ONLY valid JSON.\nDo not include markdown.\nDo not include explanations outside the JSON.\nDo not invent information that was not provided."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "5662d553-9946-4ff0-ab63-4398866f7c23",
+      "name": "AI Bug Analysis Agent"
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = JSON.parse($json.output);\n\nreturn [\n  {\n    json: response\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        768,
+        0
+      ],
+      "id": "c2e26fb6-9d12-4110-8ac1-732e81eaf1b4",
+      "name": "Parse AI Response"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        896,
+        -176
+      ],
+      "id": "1d9c6bfe-1b4b-4d46-b2bf-848a39cf3b3d",
+      "name": "Merge Bug Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get current timestamp\nconst now = new Date();\n\n// Format date as YYYYMMDD\nconst date =\n  now.getFullYear().toString() +\n  String(now.getMonth() + 1).padStart(2, \"0\") +\n  String(now.getDate()).padStart(2, \"0\");\n\n// Generate random 4-digit number\nconst random = Math.floor(1000 + Math.random() * 9000);\n\n// Create Ticket ID\nconst ticketId = `BUG-${date}-${random}`;\n\n// Return Master Ticket Object\nreturn [\n  {\n    json: {\n      // Preserve all existing fields\n      ...$json,\n\n      // Ticket Information\n      ticket_id: ticketId,\n      ticket_type: \"Bug\",\n      status: \"Open\",\n      report_status: \"Submitted\",\n\n      // Timestamps\n      created_at: now.toISOString(),\n      updated_at: now.toISOString(),\n      closed_at: null,\n\n      // Assignment\n      assigned_to: \"Unassigned\",\n\n      // Metadata\n      source: \"Bug Report Form\",\n      version: \"1.0\",\n      resolution: \"\",\n\n      // AI Metadata\n      ai_confidence: $json.confidence ?? null\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1056,
+        0
+      ],
+      "id": "da16a4e4-ebc8-4323-b3f1-e20e13fb62fc",
+      "name": "Create Master Ticket"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "AI Bug Reporter DB",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Ticket ID": "={{ $json.ticket_id }}",
+            "Ticet Type": "={{ $json.ticket_type }}",
+            "Status": "={{ $json.status }}",
+            "Report Status": "={{ $json.report_status }}",
+            "Created At": "={{ $json.created_at }}",
+            "Updated At": "={{ $json.updated_at }}",
+            "Reporter Name": "={{ $json.reporter_name }}",
+            "Reporter Email": "={{ $json.reporter_email }}",
+            "Appliction": "={{ $json.application }}",
+            "Environment": "={{ $json.environment }}",
+            "Browser": "={{ $json.browser }}",
+            "Device ": "={{ $json.device }}",
+            "Pge URL": "={{ $json.page_url }}",
+            "Bug Title": "={{ $json.bug_title }}",
+            "Bug Description": "={{ $json.bug_description }}",
+            "Expected Result": "={{ $json.expected_result }}",
+            "Actual Result": "={{ $json.actual_result }}",
+            "Technical Summary": "={{ $json.summary }}",
+            "Severity": "={{ $json.severity }}",
+            "Priority": "={{ $json.priority }}",
+            "Business Impact": "={{ $json.businessImpact }}",
+            "Root Causes": "={{ $json.rootCause }}",
+            "Assigned To ": "={{ $json.assigned_to }}",
+            "Resolution ": "={{ $json.resolution }}",
+            "Category": "={{ $json.classification }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Ticket ID",
+              "displayName": "Ticket ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Ticet Type",
+              "displayName": "Ticet Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Report Status",
+              "displayName": "Report Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Created At",
+              "displayName": "Created At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Updated At",
+              "displayName": "Updated At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Reporter Name",
+              "displayName": "Reporter Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Reporter Email",
+              "displayName": "Reporter Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Appliction",
+              "displayName": "Appliction",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Environment",
+              "displayName": "Environment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Browser",
+              "displayName": "Browser",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Device ",
+              "displayName": "Device ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Pge URL",
+              "displayName": "Pge URL",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Bug Title",
+              "displayName": "Bug Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Bug Description",
+              "displayName": "Bug Description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Expected Result",
+              "displayName": "Expected Result",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Actual Result",
+              "displayName": "Actual Result",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Technical Summary",
+              "displayName": "Technical Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Category",
+              "displayName": "Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Severity",
+              "displayName": "Severity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Priority",
+              "displayName": "Priority",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Business Impact",
+              "displayName": "Business Impact",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Root Causes",
+              "displayName": "Root Causes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Assigned To ",
+              "displayName": "Assigned To ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Resolution ",
+              "displayName": "Resolution ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1264,
+        0
+      ],
+      "id": "7aa90c32-fdd5-4a9d-8b8d-78b8dccd3a4c",
+      "name": "Store Ticket",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json[\"Reporter Email\"] }}",
+        "subject": "=Bug Report Received - {{ $json[\"Ticket ID\"] }}",
+        "emailType": "text",
+        "message": "=Hello {{$json['Reporter Name']}},\n\nThank you for reporting the issue. We have successfully received your bug report, and our engineering team has been notified.\n\nBelow are the details of your submitted report:\n\n━━━━━━━━━━━━━━━━━━━━━━\n\n🎫 **Ticket ID:** {{$json['Ticket ID']}}\n\n🐞 **Ticket Type:** {{$json['Ticet Type']}}\n\n📌 **Status:** {{$json['Status']}}\n\n📋 **Report Status:** {{$json['Report Status']}}\n\n💻 **Application:** {{$json['Appliction']}}\n\n🌐 **Environment:** {{$json['Environment']}}\n\n🖥️ **Browser:** {{$json['Browser']}}\n\n📱 **Device:** {{$json['Device ']}}\n\n🔗 **Page URL:** {{$json['Pge URL']}}\n\n📝 **Bug Title:** {{$json['Bug Title']}}\n\n📖 **Bug Description:**\n{{$json['Bug Description']}}\n\n✅ **Expected Result:**\n{{$json['Expected Result']}}\n\n❌ **Actual Result:**\n{{$json['Actual Result']}}\n\n📄 **Technical Summary:**\n{{$json['Technical Summary']}}\n\n🏷️ **Category:** {{$json['Category']}}\n\n🚨 **Severity:** {{$json['Severity']}}\n\n⚡ **Priority:** {{$json['Priority']}}\n\n📈 **Business Impact:**\n{{$json['Business Impact']}}\n\n🔍 **Possible Root Cause:**\n{{$json['Root Causes']}}\n\n👤 **Assigned To:** {{$json['Assigned To ']}}\n\n📅 **Submitted At:** {{$json['Created At']}}\n\n━━━━━━━━━━━━━━━━━━━━━━\n\nOur engineering team will review this issue and begin the investigation as soon as possible. If additional information is required, we will contact you using this email address.\n\nThank you for helping us improve our platform.\n\nBest regards,\n\n**Shinka-6C Support Team**\nAI Bug Report Management System\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1472,
+        0
+      ],
+      "id": "2b58af5e-9548-46e5-a50c-4e079444d28a",
+      "name": "Send Conformation EMail",
+      "webhookId": "YOUR_GMAIL_WEBHOOK_ID",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_GMAIL_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Bug Analysis Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bug Report Webhook": {
+      "main": [
+        [
+          {
+            "node": "Prepare Bug Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Bug Report": {
+      "main": [
+        [
+          {
+            "node": "AI Bug Analysis Agent",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Bug Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Bug Analysis Agent": {
+      "main": [
+        [
+          {
+            "node": "Parse AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI Response": {
+      "main": [
+        [
+          {
+            "node": "Merge Bug Data",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Bug Data": {
+      "main": [
+        [
+          {
+            "node": "Create Master Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Master Ticket": {
+      "main": [
+        [
+          {
+            "node": "Store Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Ticket": {
+      "main": [
+        [
+          {
+            "node": "Send Conformation EMail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": true,
+    "timeSavedPerExecution": 20
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "pinData": {},
+  "versionId": "c93204ff-e6e2-4478-8a7c-c73b84b68702",
+  "activeVersionId": "c93204ff-e6e2-4478-8a7c-c73b84b68702",
+  "versionCounter": 127,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-07-07T05:20:36.153Z",
+      "createdAt": "2026-07-07T05:20:36.153Z",
+      "role": "workflow:owner",
+      "workflowId": "PBccACeTV9MXOA88",
+      "projectId": "YOUR_PROJECT_ID",
+      "project": {
+        "updatedAt": "2026-06-04T07:55:05.260Z",
+        "createdAt": "2026-06-04T07:52:41.897Z",
+        "id": "YOUR_PROJECT_ID",
+        "name": "YOUR_NAME <YOUR_EMAIL>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "YOUR_CREATOR_ID"
+      }
+    }
+  ],
+  "tags": [
+    {
+      "updatedAt": "2026-06-09T06:33:27.317Z",
+      "createdAt": "2026-06-09T06:33:27.317Z",
+      "id": "8ZUaEfWmhomQ0P8p",
+      "name": "n8n"
+    },
+    {
+      "updatedAt": "2026-07-07T06:52:15.745Z",
+      "createdAt": "2026-07-07T06:52:15.745Z",
+      "id": "Cps2ohSBlAUiDzO2",
+      "name": "QA"
+    },
+    {
+      "updatedAt": "2026-07-07T06:52:06.138Z",
+      "createdAt": "2026-07-07T06:52:06.138Z",
+      "id": "Dvdv6bolPKxfYgEQ",
+      "name": "Bug Tracking"
+    },
+    {
+      "updatedAt": "2026-06-09T06:33:15.749Z",
+      "createdAt": "2026-06-09T06:33:15.749Z",
+      "id": "OqenQjr9s45g7AEO",
+      "name": "ai"
+    },
+    {
+      "updatedAt": "2026-06-19T18:47:33.921Z",
+      "createdAt": "2026-06-19T18:47:33.921Z",
+      "id": "adTN6XPgfo01vqx0",
+      "name": "ai automation"
+    },
+    {
+      "updatedAt": "2026-07-07T06:52:20.280Z",
+      "createdAt": "2026-07-07T06:52:20.280Z",
+      "id": "ytx6by3AMfHQ5ub1",
+      "name": "Help Desk"
+    }
+  ],
+  "parentFolder": null,
+  "activeVersion": {
+    "updatedAt": "2026-07-07T06:50:57.000Z",
+    "createdAt": "2026-07-07T06:49:56.037Z",
+    "versionId": "c93204ff-e6e2-4478-8a7c-c73b84b68702",
+    "workflowId": "PBccACeTV9MXOA88",
+    "nodes": [
+      {
+        "parameters": {
+          "model": {
+            "__rl": true,
+            "value": "openai/gpt-oss-20b",
+            "mode": "list",
+            "cachedResultName": "openai/gpt-oss-20b"
+          },
+          "builtInTools": {},
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+        "typeVersion": 1.3,
+        "position": [
+          272,
+          208
+        ],
+        "id": "00d4e0fd-b0f2-432b-a5da-9efb672eb59d",
+        "name": "OpenAI Chat Model",
+        "credentials": {
+          "openAiApi": {
+            "id": "YOUR_OPENAI_CREDENTIAL_ID",
+            "name": "OpenAI account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "AI Bug Reporter",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          0,
+          0
+        ],
+        "id": "325b79c9-70f1-4bf4-b9ea-3576eee3f92c",
+        "name": "Bug Report Webhook",
+        "webhookId": "YOUR_WEBHOOK_ID"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "36d9b26b-3d90-4e73-9958-23646a44b439",
+                "name": "reporter_name",
+                "value": "={{ $json.body.reporter_name }}",
+                "type": "string"
+              },
+              {
+                "id": "40b5c160-ac15-431e-b89e-53e0abe20ba3",
+                "name": "reporter_email",
+                "value": "={{ $json.body.reporter_email }}",
+                "type": "string"
+              },
+              {
+                "id": "16ea4c2e-8203-4da7-be41-5d07abcc1c13",
+                "name": "application",
+                "value": "={{ $json.body.application }}",
+                "type": "string"
+              },
+              {
+                "id": "f4e0310a-8330-4421-b3ae-411d8980e849",
+                "name": "environment",
+                "value": "={{ $json.body.environment }}",
+                "type": "string"
+              },
+              {
+                "id": "bf002b65-b1e4-4e5c-9696-f824b14a50d0",
+                "name": "browser",
+                "value": "={{ $json.body.browser }}",
+                "type": "string"
+              },
+              {
+                "id": "933457f5-1b17-48ce-8b3d-6e84363cf221",
+                "name": "device",
+                "value": "={{ $json.body.device }}",
+                "type": "string"
+              },
+              {
+                "id": "51271240-5262-4cad-9d70-dc764b68c09c",
+                "name": "page_url",
+                "value": "={{ $json.body.page_url }}",
+                "type": "string"
+              },
+              {
+                "id": "49d95bfd-a598-4a9b-8319-863b78558eb1",
+                "name": "bug_title",
+                "value": "={{ $json.body.bug_title }}",
+                "type": "string"
+              },
+              {
+                "id": "2869b8d0-ba3b-4517-9dd4-45400d340167",
+                "name": "bug_description",
+                "value": "={{ $json.body.bug_description }}",
+                "type": "string"
+              },
+              {
+                "id": "be75e8c7-cfbf-4e3b-8a0e-d2398e0fecf9",
+                "name": "steps_to_reproduce",
+                "value": "={{ $json.body.steps_to_reproduce }}",
+                "type": "string"
+              },
+              {
+                "id": "699a51c8-23c9-4e40-9c4c-00f36ebec930",
+                "name": "expected_result",
+                "value": "={{ $json.body.expected_result }}",
+                "type": "string"
+              },
+              {
+                "id": "688aa533-8e54-43b1-8854-89dba44f23b4",
+                "name": "actual_result",
+                "value": "={{ $json.body.actual_result }}",
+                "type": "string"
+              },
+              {
+                "id": "d05959dc-b4a3-46ee-81d1-5530c6b240f5",
+                "name": "attachment",
+                "value": "={{ $json.body.attachment }}",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          208,
+          0
+        ],
+        "id": "78b050f2-9ff0-4dc3-af2e-8c5c546cee12",
+        "name": "Prepare Bug Report"
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "=Analyze the following bug report and generate a structured engineering ticket.\n\nReporter Name:\n{{ $json.reporter_name }}\n\nReporter Email:\n{{ $json.reporter_email }}\n\nApplication:\n{{ $json.application }}\n\nEnvironment:\n{{ $json.environment }}\n\nBrowser:\n{{ $json.browser }}\n\nDevice:\n{{ $json.device }}\n\nPage URL:\n{{ $json.page_url }}\n\nBug Title:\n{{ $json.bug_title }}\n\nBug Description:\n{{ $json.bug_description }}\n\nSteps to Reproduce:\n{{ $json.steps_to_reproduce }}\n\nExpected Result:\n{{ $json.expected_result }}\n\nActual Result:\n{{ $json.actual_result }}\n\nAttachment:\n{{ $json.attachment }}\n\nReturn the response as structured JSON only.",
+          "options": {
+            "systemMessage": "You are an experienced Senior QA Engineer and Software Support Analyst.\n\nYour responsibility is to analyze bug reports submitted by users and convert them into structured engineering tickets.\n\nCarefully analyze the provided information including the bug title, description, reproduction steps, expected result, actual result, environment, browser, device, and application.\n\nYour tasks are:\n\n1. Write a short technical summary of the bug.\n2. Classify the bug into ONE category:\n   - Frontend\n   - Backend\n   - API\n   - Authentication\n   - Database\n   - Payment\n   - Performance\n   - Security\n   - Mobile\n   - Infrastructure\n   - DevOps\n   - Other\n\n3. Determine the severity:\n   - Critical\n   - High\n   - Medium\n   - Low\n\n4. Determine the priority:\n   - P0\n   - P1\n   - P2\n   - P3\n\n5. Explain the business impact.\n\n6. Suggest the most likely root cause based only on the provided information. If uncertain, clearly state that it is an educated guess.\n\n7. Rewrite the bug into a professional engineering description.\n\n8. Improve the reproduction steps if needed.\n\n9. Generate clear acceptance criteria that developers can use to verify the fix.\n\n10. Recommend the responsible team:\n   - Frontend Team\n   - Backend Team\n   - Mobile Team\n   - DevOps Team\n   - Security Team\n   - QA Team\n\n11. Generate relevant tags.\n\n12. Estimate your confidence in your analysis from 0 to 100.\n\nReturn it as:\n\n\"confidence\": 95\n\nClassification Guidelines:\n\nCritical:\n- Complete application outage\n- Login unavailable for all users\n- Payment failure\n- Security vulnerability\n- Database failure\n- Data loss\n\nHigh:\n- Major feature broken\n- Many users affected\n- API failures\n- Authentication problems\n\nMedium:\n- Feature partially works\n- Performance issues\n- Incorrect calculations\n\nLow:\n- UI issues\n- Typographical errors\n- Cosmetic issues\n- Minor usability problems\n\nReturn ONLY valid JSON.\nDo not include markdown.\nDo not include explanations outside the JSON.\nDo not invent information that was not provided."
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 3.1,
+        "position": [
+          416,
+          0
+        ],
+        "id": "5662d553-9946-4ff0-ab63-4398866f7c23",
+        "name": "AI Bug Analysis Agent"
+      },
+      {
+        "parameters": {
+          "jsCode": "const response = JSON.parse($json.output);\n\nreturn [\n  {\n    json: response\n  }\n];"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          768,
+          0
+        ],
+        "id": "c2e26fb6-9d12-4110-8ac1-732e81eaf1b4",
+        "name": "Parse AI Response"
+      },
+      {
+        "parameters": {
+          "mode": "combine",
+          "combineBy": "combineByPosition",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.merge",
+        "typeVersion": 3.2,
+        "position": [
+          896,
+          -176
+        ],
+        "id": "1d9c6bfe-1b4b-4d46-b2bf-848a39cf3b3d",
+        "name": "Merge Bug Data"
+      },
+      {
+        "parameters": {
+          "jsCode": "// Get current timestamp\nconst now = new Date();\n\n// Format date as YYYYMMDD\nconst date =\n  now.getFullYear().toString() +\n  String(now.getMonth() + 1).padStart(2, \"0\") +\n  String(now.getDate()).padStart(2, \"0\");\n\n// Generate random 4-digit number\nconst random = Math.floor(1000 + Math.random() * 9000);\n\n// Create Ticket ID\nconst ticketId = `BUG-${date}-${random}`;\n\n// Return Master Ticket Object\nreturn [\n  {\n    json: {\n      // Preserve all existing fields\n      ...$json,\n\n      // Ticket Information\n      ticket_id: ticketId,\n      ticket_type: \"Bug\",\n      status: \"Open\",\n      report_status: \"Submitted\",\n\n      // Timestamps\n      created_at: now.toISOString(),\n      updated_at: now.toISOString(),\n      closed_at: null,\n\n      // Assignment\n      assigned_to: \"Unassigned\",\n\n      // Metadata\n      source: \"Bug Report Form\",\n      version: \"1.0\",\n      resolution: \"\",\n\n      // AI Metadata\n      ai_confidence: $json.confidence ?? null\n    }\n  }\n];"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1056,
+          0
+        ],
+        "id": "da16a4e4-ebc8-4323-b3f1-e20e13fb62fc",
+        "name": "Create Master Ticket"
+      },
+      {
+        "parameters": {
+          "operation": "append",
+          "documentId": {
+            "__rl": true,
+            "value": "YOUR_GOOGLE_SHEET_ID",
+            "mode": "list",
+            "cachedResultName": "AI Bug Reporter DB",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit?usp=drivesdk"
+          },
+          "sheetName": {
+            "__rl": true,
+            "value": "gid=0",
+            "mode": "list",
+            "cachedResultName": "Sheet1",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit#gid=0"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "Ticket ID": "={{ $json.ticket_id }}",
+              "Ticet Type": "={{ $json.ticket_type }}",
+              "Status": "={{ $json.status }}",
+              "Report Status": "={{ $json.report_status }}",
+              "Created At": "={{ $json.created_at }}",
+              "Updated At": "={{ $json.updated_at }}",
+              "Reporter Name": "={{ $json.reporter_name }}",
+              "Reporter Email": "={{ $json.reporter_email }}",
+              "Appliction": "={{ $json.application }}",
+              "Environment": "={{ $json.environment }}",
+              "Browser": "={{ $json.browser }}",
+              "Device ": "={{ $json.device }}",
+              "Pge URL": "={{ $json.page_url }}",
+              "Bug Title": "={{ $json.bug_title }}",
+              "Bug Description": "={{ $json.bug_description }}",
+              "Expected Result": "={{ $json.expected_result }}",
+              "Actual Result": "={{ $json.actual_result }}",
+              "Technical Summary": "={{ $json.summary }}",
+              "Severity": "={{ $json.severity }}",
+              "Priority": "={{ $json.priority }}",
+              "Business Impact": "={{ $json.businessImpact }}",
+              "Root Causes": "={{ $json.rootCause }}",
+              "Assigned To ": "={{ $json.assigned_to }}",
+              "Resolution ": "={{ $json.resolution }}",
+              "Category": "={{ $json.classification }}"
+            },
+            "matchingColumns": [],
+            "schema": [
+              {
+                "id": "Ticket ID",
+                "displayName": "Ticket ID",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Ticet Type",
+                "displayName": "Ticet Type",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Status",
+                "displayName": "Status",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Report Status",
+                "displayName": "Report Status",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Created At",
+                "displayName": "Created At",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Updated At",
+                "displayName": "Updated At",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Reporter Name",
+                "displayName": "Reporter Name",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Reporter Email",
+                "displayName": "Reporter Email",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Appliction",
+                "displayName": "Appliction",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Environment",
+                "displayName": "Environment",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Browser",
+                "displayName": "Browser",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Device ",
+                "displayName": "Device ",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Pge URL",
+                "displayName": "Pge URL",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Bug Title",
+                "displayName": "Bug Title",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Bug Description",
+                "displayName": "Bug Description",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Expected Result",
+                "displayName": "Expected Result",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Actual Result",
+                "displayName": "Actual Result",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Technical Summary",
+                "displayName": "Technical Summary",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Category",
+                "displayName": "Category",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Severity",
+                "displayName": "Severity",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Priority",
+                "displayName": "Priority",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Business Impact",
+                "displayName": "Business Impact",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Root Causes",
+                "displayName": "Root Causes",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Assigned To ",
+                "displayName": "Assigned To ",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Resolution ",
+                "displayName": "Resolution ",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.googleSheets",
+        "typeVersion": 4.7,
+        "position": [
+          1264,
+          0
+        ],
+        "id": "7aa90c32-fdd5-4a9d-8b8d-78b8dccd3a4c",
+        "name": "Store Ticket",
+        "credentials": {
+          "googleSheetsOAuth2Api": {
+            "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+            "name": "Google Sheets account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "sendTo": "={{ $json[\"Reporter Email\"] }}",
+          "subject": "=Bug Report Received - {{ $json[\"Ticket ID\"] }}",
+          "emailType": "text",
+          "message": "=Hello {{$json['Reporter Name']}},\n\nThank you for reporting the issue. We have successfully received your bug report, and our engineering team has been notified.\n\nBelow are the details of your submitted report:\n\n━━━━━━━━━━━━━━━━━━━━━━\n\n🎫 **Ticket ID:** {{$json['Ticket ID']}}\n\n🐞 **Ticket Type:** {{$json['Ticet Type']}}\n\n📌 **Status:** {{$json['Status']}}\n\n📋 **Report Status:** {{$json['Report Status']}}\n\n💻 **Application:** {{$json['Appliction']}}\n\n🌐 **Environment:** {{$json['Environment']}}\n\n🖥️ **Browser:** {{$json['Browser']}}\n\n📱 **Device:** {{$json['Device ']}}\n\n🔗 **Page URL:** {{$json['Pge URL']}}\n\n📝 **Bug Title:** {{$json['Bug Title']}}\n\n📖 **Bug Description:**\n{{$json['Bug Description']}}\n\n✅ **Expected Result:**\n{{$json['Expected Result']}}\n\n❌ **Actual Result:**\n{{$json['Actual Result']}}\n\n📄 **Technical Summary:**\n{{$json['Technical Summary']}}\n\n🏷️ **Category:** {{$json['Category']}}\n\n🚨 **Severity:** {{$json['Severity']}}\n\n⚡ **Priority:** {{$json['Priority']}}\n\n📈 **Business Impact:**\n{{$json['Business Impact']}}\n\n🔍 **Possible Root Cause:**\n{{$json['Root Causes']}}\n\n👤 **Assigned To:** {{$json['Assigned To ']}}\n\n📅 **Submitted At:** {{$json['Created At']}}\n\n━━━━━━━━━━━━━━━━━━━━━━\n\nOur engineering team will review this issue and begin the investigation as soon as possible. If additional information is required, we will contact you using this email address.\n\nThank you for helping us improve our platform.\n\nBest regards,\n\n**Shinka-6C Support Team**\nAI Bug Report Management System\n",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.2,
+        "position": [
+          1472,
+          0
+        ],
+        "id": "2b58af5e-9548-46e5-a50c-4e079444d28a",
+        "name": "Send Conformation EMail",
+        "webhookId": "YOUR_GMAIL_WEBHOOK_ID",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "YOUR_GMAIL_CREDENTIAL_ID",
+            "name": "Gmail account"
+          }
+        }
+      }
+    ],
+    "connections": {
+      "OpenAI Chat Model": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "AI Bug Analysis Agent",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Bug Report Webhook": {
+        "main": [
+          [
+            {
+              "node": "Prepare Bug Report",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prepare Bug Report": {
+        "main": [
+          [
+            {
+              "node": "AI Bug Analysis Agent",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Merge Bug Data",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "AI Bug Analysis Agent": {
+        "main": [
+          [
+            {
+              "node": "Parse AI Response",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Parse AI Response": {
+        "main": [
+          [
+            {
+              "node": "Merge Bug Data",
+              "type": "main",
+              "index": 1
+            }
+          ]
+        ]
+      },
+      "Merge Bug Data": {
+        "main": [
+          [
+            {
+              "node": "Create Master Ticket",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Create Master Ticket": {
+        "main": [
+          [
+            {
+              "node": "Store Ticket",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Store Ticket": {
+        "main": [
+          [
+            {
+              "node": "Send Conformation EMail",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "YOUR_NAME",
+    "name": "AI Bug Report Auto Ticket System",
+    "description": "",
+    "autosaved": true,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-07-07T06:50:57.160Z",
+        "id": 66,
+        "workflowId": "PBccACeTV9MXOA88",
+        "versionId": "c93204ff-e6e2-4478-8a7c-c73b84b68702",
+        "event": "activated",
+        "userId": "YOUR_USER_ID"
+      },
+      {
+        "createdAt": "2026-07-07T06:51:09.918Z",
+        "id": 68,
+        "workflowId": "PBccACeTV9MXOA88",
+        "versionId": "c93204ff-e6e2-4478-8a7c-c73b84b68702",
+        "event": "activated",
+        "userId": "YOUR_USER_ID"
+      },
+      {
+        "createdAt": "2026-07-07T06:51:09.857Z",
+        "id": 67,
+        "workflowId": "PBccACeTV9MXOA88",
+        "versionId": "c93204ff-e6e2-4478-8a7c-c73b84b68702",
+        "event": "deactivated",
+        "userId": "YOUR_USER_ID"
+      }
+    ]
+  },
+  "scopes": [
+    "execution:reveal",
+    "workflow:create",
+    "workflow:delete",
+    "workflow:disableRedaction",
+    "workflow:enableRedaction",
+    "workflow:execute",
+    "workflow:execute-chat",
+    "workflow:export",
+    "workflow:list",
+    "workflow:move",
+    "workflow:publish",
+    "workflow:read",
+    "workflow:share",
+    "workflow:unpublish",
+    "workflow:unshare",
+    "workflow:update"
+  ],
+  "checksum": "c589b90982a499ebd3479475b38a6a8bd67b939893b1fdfb1dee5043e21d7491"
+}
