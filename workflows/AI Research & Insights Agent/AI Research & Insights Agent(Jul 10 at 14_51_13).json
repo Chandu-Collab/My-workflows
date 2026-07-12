@@ -1,0 +1,939 @@
+{
+  "updatedAt": "2026-07-10T09:22:47.747Z",
+  "createdAt": "2026-07-10T06:28:19.961Z",
+  "id": "xW7Q6N7oPaZZVa00",
+  "name": "AI Research & Insights Agent",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "openai/gpt-oss-20b",
+          "mode": "list",
+          "cachedResultName": "openai/gpt-oss-20b"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1440,
+        128
+      ],
+      "id": "61ea5f05-74d6-4d93-9e93-602a58018f72",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ai-research-agent",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "4e6a44b6-4742-467f-a2a1-5e309dfc2f8b",
+      "name": "Receive Research Request",
+      "webhookId": "YOUR_WEBHOOK_ID_1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "40af972f-0443-42a5-94fd-719aa8a4ef20",
+              "name": "topic",
+              "value": "={{ $json.body.topic }}",
+              "type": "string"
+            },
+            {
+              "id": "1cd77159-8cee-4a72-a23a-b5755c1cc8f6",
+              "name": "email",
+              "value": "={{ $json.body.email }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        256,
+        -208
+      ],
+      "id": "3ab03f21-15df-4201-be53-76a076af24ef",
+      "name": "Prepare Request"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://html.duckduckgo.com/html/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0"
+            },
+            {
+              "name": "Accept",
+              "value": "text/html"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $json.topic }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        416,
+        0
+      ],
+      "id": "fed1ae31-f56c-4444-9168-c982bdae413e",
+      "name": "DuckDuckGo Search"
+    },
+    {
+      "parameters": {
+        "jsCode": "const html = $input.first().json.data;\n\n// Match each search result block\nconst resultBlocks = [...html.matchAll(\n  /<div class=\"result results_links[\\s\\S]*?<\\/div>\\s*<\\/div>\\s*<\\/div>/g\n)];\n\nconst results = [];\n\nfor (const block of resultBlocks) {\n  const content = block[0];\n\n  // Extract title\n  const titleMatch = content.match(\n    /<a[^>]*class=\"result__a\"[^>]*>(.*?)<\\/a>/s\n  );\n\n  // Extract URL\n  const urlMatch = content.match(\n    /<a[^>]*class=\"result__a\"[^>]*href=\"([^\"]+)\"/\n  );\n\n  // Extract snippet\n  const snippetMatch = content.match(\n    /<a class=\"result__snippet\"[^>]*>(.*?)<\\/a>/s\n  );\n\n  const clean = (text = \"\") =>\n    text\n      .replace(/<[^>]+>/g, \"\")\n      .replace(/&amp;/g, \"&\")\n      .replace(/&#x27;/g, \"'\")\n      .replace(/&quot;/g, '\"')\n      .replace(/\\s+/g, \" \")\n      .trim();\n\n  if (titleMatch && urlMatch) {\n    results.push({\n      json: {\n        title: clean(titleMatch[1]),\n        url: urlMatch[1],\n        snippet: clean(snippetMatch?.[1] || \"\")\n      }\n    });\n  }\n}\n\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        640,
+        0
+      ],
+      "id": "f6e0167b-1c48-4e1c-a0bc-3d0a71db5a66",
+      "name": "Parse Search Results"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        848,
+        0
+      ],
+      "id": "d8abe88a-8ce1-455e-ac84-3cfd37a40b8f",
+      "name": "Fetch Articles"
+    },
+    {
+      "parameters": {
+        "url": "={{ \"https://r.jina.ai/\" + $json.url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1024,
+        144
+      ],
+      "id": "1baf101e-1d4f-480f-952d-ee95c0ea2f03",
+      "name": "Jina AI Reader",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1216,
+        -80
+      ],
+      "id": "36190a36-09c4-401d-9188-190a3689c507",
+      "name": "Aggregate Research"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Research Topic:\n\n{{ $('Prepare Request').item.json.topic }}\n\nBelow are multiple research articles collected from various websites.\n\n{{\n\n$json.data\n.map(article => article.data)\n.join(\"\\n\\n====================================================\\n\\n\")\n\n}}\n\nGenerate a professional research report.\n\nThe report must contain:\n\n1. topic\n\n2. executiveSummary\n(A concise summary of the overall research.)\n\n3. keyInsights\n(5–10 important findings.)\n\n4. statistics\n\nEach statistic must contain:\n\n{\n\"title\":\"\",\n\"value\":\"\"\n}\n\nOnly include measurable values.\n\n5. opportunities\n\nBusiness opportunities, technical opportunities, market opportunities, or research opportunities.\n\n6. risks\n\nPotential risks, challenges, ethical concerns, technical limitations, regulatory issues, or adoption barriers.\n\n7. futureTrends\n\nLikely future developments based on the research.\n\n8. conclusion\n\nA concise overall conclusion.\n\n9. sources\n\nFor every article include:\n\n{\n\"title\":\"\",\n\"url\":\"\"\n}\n\nUse the \"Title\" and \"URL Source\" sections already provided inside each article.\n\nDo not invent sources.\n\n10. confidenceScore\n\nReturn a percentage like:\n\n92%\n\nbased on the quality and agreement of the available sources.\n\nImportant Rules:\n\n- Remove duplicate information.\n- Remove duplicate sources.\n- Remove duplicate statistics.\n- Never generate information not found in the articles.\n- If sources disagree, mention the disagreement inside the executiveSummary or conclusion.\n- Every array must contain only unique values.\n- If a section has no information return an empty array.\n- Return ONLY valid JSON.",
+        "options": {
+          "systemMessage": "You are an Expert AI Research Analyst.\n\nYour responsibility is to analyze multiple research articles collected from different websites and generate a comprehensive, factual, and unbiased research report.\n\n## Your Responsibilities\n\n1. Carefully read every article before answering.\n2. Merge similar information from multiple sources.\n3. Remove duplicate information.\n4. Never invent facts that are not present in the provided articles.\n5. If different sources provide conflicting information, clearly mention the disagreement instead of choosing one side.\n6. Use only the information provided in the articles.\n7. Keep the report professional, concise, and easy to understand.\n8. Prioritize trustworthy and authoritative sources when forming conclusions.\n9. Extract important facts, statistics, numbers, and measurable outcomes.\n10. Identify trends, opportunities, risks, and future directions.\n11. Create a well-structured executive summary.\n12. Every article begins with:\n\nTitle:\nURL Source:\nMarkdown Content:\n\nUse these to build the final sources list.\n\n## Output Rules\n\nAlways return every required field.\n\nNever omit any field.\n\nIf information is unavailable:\n\n- Return an empty array []\n- Return an empty string \"\"\n\nNever return:\n\n- null\n- undefined\n- N/A\n- Unknown\n- Placeholder values\n- Empty strings inside arrays\n\nRemove duplicate entries from every array.\n\nEstimate a confidence score (0-100) based on:\n\n- Number of sources\n- Source quality\n- Agreement among sources\n- Completeness of information\n\nDo not always return 100%.\n\nThe report must be factual, objective, and evidence-based.\n\nReturn ONLY valid JSON.\n\nDo not include markdown.\n\nDo not wrap JSON inside code blocks.\n\nDo not include explanations outside JSON."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1408,
+        -80
+      ],
+      "id": "d9f06ae2-02a3-478d-aabf-96e6ae4c3665",
+      "name": "AI Research Analyst"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1696,
+        -208
+      ],
+      "id": "5a9224f5-369d-42a8-a72d-d6389e6f2eee",
+      "name": "Merge Request & Report"
+    },
+    {
+      "parameters": {
+        "jsCode": "const report = JSON.parse($json.output);\n\nconst html = `\n<html>\n<body style=\"font-family:Arial,sans-serif;line-height:1.6;color:#333;background:#f8f9fa;padding:20px;\">\n\n<div style=\"max-width:900px;margin:auto;background:white;padding:30px;border-radius:12px;\">\n\n<h1 style=\"color:#2563eb;\">📚 AI Research Report</h1>\n\n<h2>${$json.topic}</h2>\n\n<hr>\n\n<h3>📖 Executive Summary</h3>\n\n<p>${report.executiveSummary}</p>\n\n<h3>💡 Key Insights</h3>\n\n<ul>\n${report.keyInsights.map(i=>`<li>${i}</li>`).join(\"\")}\n</ul>\n\n<h3>📊 Statistics</h3>\n\n<table border=\"1\" cellspacing=\"0\" cellpadding=\"8\" style=\"border-collapse:collapse;width:100%;\">\n<tr>\n<th>Metric</th>\n<th>Value</th>\n</tr>\n\n${report.statistics.map(s=>`\n<tr>\n<td>${s.title}</td>\n<td>${s.value}</td>\n</tr>\n`).join(\"\")}\n\n</table>\n\n<h3>🚀 Opportunities</h3>\n\n<ul>\n${report.opportunities.map(o=>`<li>${o}</li>`).join(\"\")}\n</ul>\n\n<h3>⚠ Risks</h3>\n\n<ul>\n${report.risks.map(r=>`<li>${r}</li>`).join(\"\")}\n</ul>\n\n<h3>📈 Future Trends</h3>\n\n<ul>\n${report.futureTrends.map(t=>`<li>${t}</li>`).join(\"\")}\n</ul>\n\n<h3>📝 Conclusion</h3>\n\n<p>${report.conclusion}</p>\n\n<h3>🔗 Sources</h3>\n\n<ul>\n${report.sources.map(s=>`<li><a href=\"${s.url}\">${s.title}</a></li>`).join(\"\")}\n</ul>\n\n<hr>\n\n<h3>🎯 Confidence Score</h3>\n\n<p style=\"font-size:20px;font-weight:bold;color:#16a34a;\">\n${report.confidenceScore}\n</p>\n\n<p style=\"margin-top:40px;font-size:13px;color:#666;\">\nGenerated by <b>Shinka-6C AI Research Agent</b>\n</p>\n\n</div>\n\n</body>\n</html>\n`;\n\nreturn [{\njson:{\nemail:$json.email,\nsubject:`📚 Your AI Research Report is Ready | ${$json.topic}`,\nhtml\n}\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1888,
+        -144
+      ],
+      "id": "8f764692-5086-4252-a892-528e4095bbbd",
+      "name": "Generate HTML Report"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "=📚 Your AI Research Report is Ready | {{ $json.subject }}",
+        "message": "={{ $json.html }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2096,
+        -80
+      ],
+      "id": "759d524e-898b-4389-8f65-903df6a0faa7",
+      "name": "Send Research Report",
+      "webhookId": "YOUR_WEBHOOK_ID_2",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_GMAIL_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const MAX_CHARS = 3000;\n\nreturn items.map(item => {\n  let article = item.json.data || \"\";\n\n  // Keep only the first 3000 characters\n  if (article.length > MAX_CHARS) {\n    article = article.substring(0, MAX_CHARS);\n  }\n\n  return {\n    json: {\n      data: article\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        -112
+      ],
+      "id": "d951cd71-36a8-4936-b898-9fe916d733a6",
+      "name": "✂️ Optimize Article Content"
+    }
+  ],
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Research Analyst",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Receive Research Request": {
+      "main": [
+        [
+          {
+            "node": "Prepare Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Request": {
+      "main": [
+        [
+          {
+            "node": "DuckDuckGo Search",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Request & Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DuckDuckGo Search": {
+      "main": [
+        [
+          {
+            "node": "Parse Search Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Search Results": {
+      "main": [
+        [
+          {
+            "node": "Fetch Articles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Articles": {
+      "main": [
+        [
+          {
+            "node": "✂️ Optimize Article Content",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Jina AI Reader",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Jina AI Reader": {
+      "main": [
+        [
+          {
+            "node": "Fetch Articles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Research": {
+      "main": [
+        [
+          {
+            "node": "AI Research Analyst",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Research Analyst": {
+      "main": [
+        [
+          {
+            "node": "Merge Request & Report",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Request & Report": {
+      "main": [
+        [
+          {
+            "node": "Generate HTML Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate HTML Report": {
+      "main": [
+        [
+          {
+            "node": "Send Research Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "✂️ Optimize Article Content": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Research",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "timeSavedPerExecution": 120
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "pinData": {},
+  "versionId": "16206adb-fa43-4fbc-9e8a-edd804f32f86",
+  "activeVersionId": "16206adb-fa43-4fbc-9e8a-edd804f32f86",
+  "versionCounter": 178,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-07-10T06:28:19.965Z",
+      "createdAt": "2026-07-10T06:28:19.965Z",
+      "role": "workflow:owner",
+      "workflowId": "xW7Q6N7oPaZZVa00",
+      "projectId": "loWf0mBs1xKuh5N3",
+      "project": {
+        "updatedAt": "2026-06-04T07:55:05.260Z",
+        "createdAt": "2026-06-04T07:52:41.897Z",
+        "id": "loWf0mBs1xKuh5N3",
+        "name": "Chandu M <chandouqiande@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "8d994dc9-eaab-443f-93bf-ef4aa823f36d"
+      }
+    }
+  ],
+  "tags": [
+    {
+      "updatedAt": "2026-07-10T09:12:47.443Z",
+      "createdAt": "2026-07-10T09:12:47.443Z",
+      "id": "0P9MP3fPOk5K40DP",
+      "name": "research"
+    },
+    {
+      "updatedAt": "2026-06-09T06:33:15.749Z",
+      "createdAt": "2026-06-09T06:33:15.749Z",
+      "id": "OqenQjr9s45g7AEO",
+      "name": "ai"
+    },
+    {
+      "updatedAt": "2026-06-09T06:33:22.379Z",
+      "createdAt": "2026-06-09T06:33:22.379Z",
+      "id": "aM91rNGq256NAUAN",
+      "name": "automation"
+    },
+    {
+      "updatedAt": "2026-07-10T09:12:49.541Z",
+      "createdAt": "2026-07-10T09:12:49.541Z",
+      "id": "hrAeCTHJbXouJQoN",
+      "name": "LLM"
+    }
+  ],
+  "parentFolder": null,
+  "activeVersion": {
+    "updatedAt": "2026-07-10T09:22:36.000Z",
+    "createdAt": "2026-07-10T09:21:13.848Z",
+    "versionId": "16206adb-fa43-4fbc-9e8a-edd804f32f86",
+    "workflowId": "xW7Q6N7oPaZZVa00",
+    "nodes": [
+      {
+        "parameters": {
+          "model": {
+            "__rl": true,
+            "value": "openai/gpt-oss-20b",
+            "mode": "list",
+            "cachedResultName": "openai/gpt-oss-20b"
+          },
+          "builtInTools": {},
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+        "typeVersion": 1.3,
+        "position": [
+          1440,
+          128
+        ],
+        "id": "61ea5f05-74d6-4d93-9e93-602a58018f72",
+        "name": "OpenAI Chat Model",
+        "credentials": {
+          "openAiApi": {
+            "id": "YOUR_OPENAI_CREDENTIAL_ID",
+            "name": "OpenAI account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "ai-research-agent",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          0,
+          0
+        ],
+        "id": "4e6a44b6-4742-467f-a2a1-5e309dfc2f8b",
+        "name": "Receive Research Request",
+        "webhookId": "YOUR_WEBHOOK_ID_1"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "40af972f-0443-42a5-94fd-719aa8a4ef20",
+                "name": "topic",
+                "value": "={{ $json.body.topic }}",
+                "type": "string"
+              },
+              {
+                "id": "1cd77159-8cee-4a72-a23a-b5755c1cc8f6",
+                "name": "email",
+                "value": "={{ $json.body.email }}",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          256,
+          -208
+        ],
+        "id": "3ab03f21-15df-4201-be53-76a076af24ef",
+        "name": "Prepare Request"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://html.duckduckgo.com/html/",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "User-Agent",
+                "value": "Mozilla/5.0"
+              },
+              {
+                "name": "Accept",
+                "value": "text/html"
+              }
+            ]
+          },
+          "sendBody": true,
+          "contentType": "form-urlencoded",
+          "bodyParameters": {
+            "parameters": [
+              {
+                "name": "q",
+                "value": "={{ $json.topic }}"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {
+                "responseFormat": "text"
+              }
+            }
+          }
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          416,
+          0
+        ],
+        "id": "fed1ae31-f56c-4444-9168-c982bdae413e",
+        "name": "DuckDuckGo Search"
+      },
+      {
+        "parameters": {
+          "jsCode": "const html = $input.first().json.data;\n\n// Match each search result block\nconst resultBlocks = [...html.matchAll(\n  /<div class=\"result results_links[\\s\\S]*?<\\/div>\\s*<\\/div>\\s*<\\/div>/g\n)];\n\nconst results = [];\n\nfor (const block of resultBlocks) {\n  const content = block[0];\n\n  // Extract title\n  const titleMatch = content.match(\n    /<a[^>]*class=\"result__a\"[^>]*>(.*?)<\\/a>/s\n  );\n\n  // Extract URL\n  const urlMatch = content.match(\n    /<a[^>]*class=\"result__a\"[^>]*href=\"([^\"]+)\"/\n  );\n\n  // Extract snippet\n  const snippetMatch = content.match(\n    /<a class=\"result__snippet\"[^>]*>(.*?)<\\/a>/s\n  );\n\n  const clean = (text = \"\") =>\n    text\n      .replace(/<[^>]+>/g, \"\")\n      .replace(/&amp;/g, \"&\")\n      .replace(/&#x27;/g, \"'\")\n      .replace(/&quot;/g, '\"')\n      .replace(/\\s+/g, \" \")\n      .trim();\n\n  if (titleMatch && urlMatch) {\n    results.push({\n      json: {\n        title: clean(titleMatch[1]),\n        url: urlMatch[1],\n        snippet: clean(snippetMatch?.[1] || \"\")\n      }\n    });\n  }\n}\n\nreturn results;"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          640,
+          0
+        ],
+        "id": "f6e0167b-1c48-4e1c-a0bc-3d0a71db5a66",
+        "name": "Parse Search Results"
+      },
+      {
+        "parameters": {
+          "options": {}
+        },
+        "type": "n8n-nodes-base.splitInBatches",
+        "typeVersion": 3,
+        "position": [
+          848,
+          0
+        ],
+        "id": "d8abe88a-8ce1-455e-ac84-3cfd37a40b8f",
+        "name": "Fetch Articles"
+      },
+      {
+        "parameters": {
+          "url": "={{ \"https://r.jina.ai/\" + $json.url }}",
+          "options": {
+            "response": {
+              "response": {
+                "responseFormat": "text"
+              }
+            }
+          }
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1024,
+          144
+        ],
+        "id": "1baf101e-1d4f-480f-952d-ee95c0ea2f03",
+        "name": "Jina AI Reader",
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "aggregate": "aggregateAllItemData",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.aggregate",
+        "typeVersion": 1,
+        "position": [
+          1216,
+          -80
+        ],
+        "id": "36190a36-09c4-401d-9188-190a3689c507",
+        "name": "Aggregate Research"
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "=Research Topic:\n\n{{ $('Prepare Request').item.json.topic }}\n\nBelow are multiple research articles collected from various websites.\n\n{{\n\n$json.data\n.map(article => article.data)\n.join(\"\\n\\n====================================================\\n\\n\")\n\n}}\n\nGenerate a professional research report.\n\nThe report must contain:\n\n1. topic\n\n2. executiveSummary\n(A concise summary of the overall research.)\n\n3. keyInsights\n(5–10 important findings.)\n\n4. statistics\n\nEach statistic must contain:\n\n{\n\"title\":\"\",\n\"value\":\"\"\n}\n\nOnly include measurable values.\n\n5. opportunities\n\nBusiness opportunities, technical opportunities, market opportunities, or research opportunities.\n\n6. risks\n\nPotential risks, challenges, ethical concerns, technical limitations, regulatory issues, or adoption barriers.\n\n7. futureTrends\n\nLikely future developments based on the research.\n\n8. conclusion\n\nA concise overall conclusion.\n\n9. sources\n\nFor every article include:\n\n{\n\"title\":\"\",\n\"url\":\"\"\n}\n\nUse the \"Title\" and \"URL Source\" sections already provided inside each article.\n\nDo not invent sources.\n\n10. confidenceScore\n\nReturn a percentage like:\n\n92%\n\nbased on the quality and agreement of the available sources.\n\nImportant Rules:\n\n- Remove duplicate information.\n- Remove duplicate sources.\n- Remove duplicate statistics.\n- Never generate information not found in the articles.\n- If sources disagree, mention the disagreement inside the executiveSummary or conclusion.\n- Every array must contain only unique values.\n- If a section has no information return an empty array.\n- Return ONLY valid JSON.",
+          "options": {
+            "systemMessage": "You are an Expert AI Research Analyst.\n\nYour responsibility is to analyze multiple research articles collected from different websites and generate a comprehensive, factual, and unbiased research report.\n\n## Your Responsibilities\n\n1. Carefully read every article before answering.\n2. Merge similar information from multiple sources.\n3. Remove duplicate information.\n4. Never invent facts that are not present in the provided articles.\n5. If different sources provide conflicting information, clearly mention the disagreement instead of choosing one side.\n6. Use only the information provided in the articles.\n7. Keep the report professional, concise, and easy to understand.\n8. Prioritize trustworthy and authoritative sources when forming conclusions.\n9. Extract important facts, statistics, numbers, and measurable outcomes.\n10. Identify trends, opportunities, risks, and future directions.\n11. Create a well-structured executive summary.\n12. Every article begins with:\n\nTitle:\nURL Source:\nMarkdown Content:\n\nUse these to build the final sources list.\n\n## Output Rules\n\nAlways return every required field.\n\nNever omit any field.\n\nIf information is unavailable:\n\n- Return an empty array []\n- Return an empty string \"\"\n\nNever return:\n\n- null\n- undefined\n- N/A\n- Unknown\n- Placeholder values\n- Empty strings inside arrays\n\nRemove duplicate entries from every array.\n\nEstimate a confidence score (0-100) based on:\n\n- Number of sources\n- Source quality\n- Agreement among sources\n- Completeness of information\n\nDo not always return 100%.\n\nThe report must be factual, objective, and evidence-based.\n\nReturn ONLY valid JSON.\n\nDo not include markdown.\n\nDo not wrap JSON inside code blocks.\n\nDo not include explanations outside JSON."
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 3.1,
+        "position": [
+          1408,
+          -80
+        ],
+        "id": "d9f06ae2-02a3-478d-aabf-96e6ae4c3665",
+        "name": "AI Research Analyst"
+      },
+      {
+        "parameters": {
+          "mode": "combine",
+          "combineBy": "combineByPosition",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.merge",
+        "typeVersion": 3.2,
+        "position": [
+          1696,
+          -208
+        ],
+        "id": "5a9224f5-369d-42a8-a72d-d6389e6f2eee",
+        "name": "Merge Request & Report"
+      },
+      {
+        "parameters": {
+          "jsCode": "const report = JSON.parse($json.output);\n\nconst html = `\n<html>\n<body style=\"font-family:Arial,sans-serif;line-height:1.6;color:#333;background:#f8f9fa;padding:20px;\">\n\n<div style=\"max-width:900px;margin:auto;background:white;padding:30px;border-radius:12px;\">\n\n<h1 style=\"color:#2563eb;\">📚 AI Research Report</h1>\n\n<h2>${$json.topic}</h2>\n\n<hr>\n\n<h3>📖 Executive Summary</h3>\n\n<p>${report.executiveSummary}</p>\n\n<h3>💡 Key Insights</h3>\n\n<ul>\n${report.keyInsights.map(i=>`<li>${i}</li>`).join(\"\")}\n</ul>\n\n<h3>📊 Statistics</h3>\n\n<table border=\"1\" cellspacing=\"0\" cellpadding=\"8\" style=\"border-collapse:collapse;width:100%;\">\n<tr>\n<th>Metric</th>\n<th>Value</th>\n</tr>\n\n${report.statistics.map(s=>`\n<tr>\n<td>${s.title}</td>\n<td>${s.value}</td>\n</tr>\n`).join(\"\")}\n\n</table>\n\n<h3>🚀 Opportunities</h3>\n\n<ul>\n${report.opportunities.map(o=>`<li>${o}</li>`).join(\"\")}\n</ul>\n\n<h3>⚠ Risks</h3>\n\n<ul>\n${report.risks.map(r=>`<li>${r}</li>`).join(\"\")}\n</ul>\n\n<h3>📈 Future Trends</h3>\n\n<ul>\n${report.futureTrends.map(t=>`<li>${t}</li>`).join(\"\")}\n</ul>\n\n<h3>📝 Conclusion</h3>\n\n<p>${report.conclusion}</p>\n\n<h3>🔗 Sources</h3>\n\n<ul>\n${report.sources.map(s=>`<li><a href=\"${s.url}\">${s.title}</a></li>`).join(\"\")}\n</ul>\n\n<hr>\n\n<h3>🎯 Confidence Score</h3>\n\n<p style=\"font-size:20px;font-weight:bold;color:#16a34a;\">\n${report.confidenceScore}\n</p>\n\n<p style=\"margin-top:40px;font-size:13px;color:#666;\">\nGenerated by <b>Shinka-6C AI Research Agent</b>\n</p>\n\n</div>\n\n</body>\n</html>\n`;\n\nreturn [{\njson:{\nemail:$json.email,\nsubject:`📚 Your AI Research Report is Ready | ${$json.topic}`,\nhtml\n}\n}];"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1888,
+          -144
+        ],
+        "id": "8f764692-5086-4252-a892-528e4095bbbd",
+        "name": "Generate HTML Report"
+      },
+      {
+        "parameters": {
+          "sendTo": "={{ $json.email }}",
+          "subject": "=📚 Your AI Research Report is Ready | {{ $json.subject }}",
+          "message": "={{ $json.html }}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.2,
+        "position": [
+          2096,
+          -80
+        ],
+        "id": "759d524e-898b-4389-8f65-903df6a0faa7",
+        "name": "Send Research Report",
+        "webhookId": "YOUR_WEBHOOK_ID_2",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "YOUR_GMAIL_CREDENTIAL_ID",
+            "name": "Gmail account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const MAX_CHARS = 3000;\n\nreturn items.map(item => {\n  let article = item.json.data || \"\";\n\n  // Keep only the first 3000 characters\n  if (article.length > MAX_CHARS) {\n    article = article.substring(0, MAX_CHARS);\n  }\n\n  return {\n    json: {\n      data: article\n    }\n  };\n});"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1040,
+          -112
+        ],
+        "id": "d951cd71-36a8-4936-b898-9fe916d733a6",
+        "name": "✂️ Optimize Article Content"
+      }
+    ],
+    "connections": {
+      "OpenAI Chat Model": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "AI Research Analyst",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Receive Research Request": {
+        "main": [
+          [
+            {
+              "node": "Prepare Request",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prepare Request": {
+        "main": [
+          [
+            {
+              "node": "DuckDuckGo Search",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Merge Request & Report",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "DuckDuckGo Search": {
+        "main": [
+          [
+            {
+              "node": "Parse Search Results",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Parse Search Results": {
+        "main": [
+          [
+            {
+              "node": "Fetch Articles",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch Articles": {
+        "main": [
+          [
+            {
+              "node": "✂️ Optimize Article Content",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Jina AI Reader",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Jina AI Reader": {
+        "main": [
+          [
+            {
+              "node": "Fetch Articles",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Aggregate Research": {
+        "main": [
+          [
+            {
+              "node": "AI Research Analyst",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "AI Research Analyst": {
+        "main": [
+          [
+            {
+              "node": "Merge Request & Report",
+              "type": "main",
+              "index": 1
+            }
+          ]
+        ]
+      },
+      "Merge Request & Report": {
+        "main": [
+          [
+            {
+              "node": "Generate HTML Report",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Generate HTML Report": {
+        "main": [
+          [
+            {
+              "node": "Send Research Report",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "✂️ Optimize Article Content": {
+        "main": [
+          [
+            {
+              "node": "Aggregate Research",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Chandu M",
+    "name": "AI Research & Insights Agent",
+    "description": "",
+    "autosaved": true,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-07-10T09:22:36.724Z",
+        "id": 70,
+        "workflowId": "xW7Q6N7oPaZZVa00",
+        "versionId": "16206adb-fa43-4fbc-9e8a-edd804f32f86",
+        "event": "activated",
+        "userId": "8d994dc9-eaab-443f-93bf-ef4aa823f36d"
+      },
+      {
+        "createdAt": "2026-07-10T09:22:47.888Z",
+        "id": 72,
+        "workflowId": "xW7Q6N7oPaZZVa00",
+        "versionId": "16206adb-fa43-4fbc-9e8a-edd804f32f86",
+        "event": "activated",
+        "userId": "8d994dc9-eaab-443f-93bf-ef4aa823f36d"
+      },
+      {
+        "createdAt": "2026-07-10T09:22:47.839Z",
+        "id": 71,
+        "workflowId": "xW7Q6N7oPaZZVa00",
+        "versionId": "16206adb-fa43-4fbc-9e8a-edd804f32f86",
+        "event": "deactivated",
+        "userId": "8d994dc9-eaab-443f-93bf-ef4aa823f36d"
+      }
+    ]
+  },
+  "scopes": [
+    "execution:reveal",
+    "workflow:create",
+    "workflow:delete",
+    "workflow:disableRedaction",
+    "workflow:enableRedaction",
+    "workflow:execute",
+    "workflow:execute-chat",
+    "workflow:export",
+    "workflow:list",
+    "workflow:move",
+    "workflow:publish",
+    "workflow:read",
+    "workflow:share",
+    "workflow:unpublish",
+    "workflow:unshare",
+    "workflow:update"
+  ],
+  "checksum": "dd9f19f76537d9c928224419f255f39002705f89fc3b0c43c03af378ea9f154f"
+}

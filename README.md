@@ -137,7 +137,7 @@ Automatically processes incoming orders, assigns priority using an AI agent base
 
 ---
 
-### 🐞 AI Bug Report Auto Ticket System (NEW 🔥)
+### 🐞 AI Bug Report Auto Ticket System
 
 Automatically convert bug reports into structured engineering tickets using AI.
 
@@ -151,6 +151,20 @@ Automatically convert bug reports into structured engineering tickets using AI.
 📁 **Folder:** [AI Bug Report Auto Ticket System](./workflows/AI%20Bug%20Report%20Auto%20Ticket%20System/)
 
 ---
+
+### 📚 AI Research & Insights Agent (NEW 🔥)
+
+Automatically researches any topic across the web, analyzes multiple articles using AI, and delivers a comprehensive, factual research report directly to your inbox.
+
+✨ **Features:**
+- 🔍 Automated web search via DuckDuckGo
+- 📖 Full-text article extraction using Jina AI Reader
+- 🧠 AI-powered synthesis of insights, statistics, risks, and trends
+- 📝 Professional HTML report generation
+- 📧 Automated email delivery via Gmail
+
+📁 **Folder:** [AI Research & Insights Agent](./workflows/AI%20Research%20&%20Insights%20Agent/)
+
 
 ## ⚙️ Tech Stack
 
@@ -188,6 +202,7 @@ ai-automation-workflows/
 ├── workflows/ai-business-insights-n8n/
 ├── workflows/AI Order Priority & Notification System/
 ├── workflows/AI Bug Report Auto Ticket System/
+├── workflows/AI Research & Insights Agent/
 ```
 
 ---
