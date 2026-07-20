@@ -1,0 +1,1571 @@
+{
+  "updatedAt": "2026-07-20T06:46:28.592Z",
+  "createdAt": "2026-07-13T07:02:54.763Z",
+  "id": "5LlmdrBaNHeLhmaf",
+  "name": "AI Competitor Intelligence Monitor",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "openai/gpt-oss-20b",
+          "mode": "list",
+          "cachedResultName": "openai/gpt-oss-20b"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        272,
+        224
+      ],
+      "id": "21740a4f-bcbe-487e-be6c-e581b534f0fa",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "openai/gpt-oss-20b",
+          "mode": "list",
+          "cachedResultName": "openai/gpt-oss-20b"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1536,
+        496
+      ],
+      "id": "35c893ff-7805-4318-ae32-38815b2897c0",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "Day-14",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "competetors",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Status",
+              "lookupValue": "Active"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -224,
+        16
+      ],
+      "id": "ed65d7a3-2f6f-4ff1-9bbf-f31963d10505",
+      "name": "Load competitor List",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{$json.Website}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/138.0 Safari/537.36"
+            },
+            {
+              "name": "Accept",
+              "value": "text/html"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -16,
+        16
+      ],
+      "id": "b8a9fcec-3a1b-425b-b83f-50d60e87c85f",
+      "name": "Fetch Website HTML",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process each incoming item\nreturn items.map(item => {\n\n  let html = item.json.data || \"\";\n\n  // Remove unwanted elements\n  html = html\n    .replace(/<script[\\s\\S]*?<\\/script>/gi, \"\")\n    .replace(/<style[\\s\\S]*?<\\/style>/gi, \"\")\n    .replace(/<svg[\\s\\S]*?<\\/svg>/gi, \"\")\n    .replace(/<noscript[\\s\\S]*?<\\/noscript>/gi, \"\")\n    .replace(/<iframe[\\s\\S]*?<\\/iframe>/gi, \"\")\n    .replace(/<!--[\\s\\S]*?-->/g, \"\");\n\n  // Strip HTML tags\n  let text = html.replace(/<[^>]+>/g, \"\\n\");\n\n  // Decode common HTML entities\n  text = text\n    .replace(/&nbsp;/g, \" \")\n    .replace(/&amp;/g, \"&\")\n    .replace(/&lt;/g, \"<\")\n    .replace(/&gt;/g, \">\")\n    .replace(/&quot;/g, '\"')\n    .replace(/&#39;/g, \"'\")\n    .replace(/&#x27;/g, \"'\");\n\n  // Split into lines\n  let lines = text\n    .split(\"\\n\")\n    .map(line => line.trim())\n    .filter(line => line.length > 2);\n\n  // Remove duplicate lines\n  lines = [...new Set(lines)];\n\n  // Remove noisy/repeated content\n  const blacklist = [\n    \"Skip to main content\",\n    \"Log in\",\n    \"Login\",\n    \"Download app\",\n    \"Cookie\",\n    \"Cookies\",\n    \"Privacy Policy\",\n    \"Terms of Use\",\n    \"Terms & Policies\",\n    \"Manage Cookies\",\n    \"Accept all cookies\",\n    \"Reject all cookies\",\n    \"Necessary\",\n    \"Analytics\",\n    \"Marketing\",\n    \"English\",\n    \"United States\"\n  ];\n\n  lines = lines.filter(line => {\n    return !blacklist.some(word =>\n      line.toLowerCase().includes(word.toLowerCase())\n    );\n  });\n\n  // Join back together\n  text = lines.join(\"\\n\");\n\n  // Normalize whitespace\n  text = text\n    .replace(/\\n{2,}/g, \"\\n\")\n    .replace(/[ \\t]{2,}/g, \" \")\n    .trim();\n\n  // Limit by words instead of characters\n  const MAX_WORDS = 1500;\n\n  const words = text.split(/\\s+/);\n\n  if (words.length > MAX_WORDS) {\n    text = words.slice(0, MAX_WORDS).join(\" \");\n  }\n\n  return {\n    json: {\n      company: item.json.Company,\n      website: item.json.Website,\n      scraped_at: new Date().toISOString(),\n      content: text\n    }\n  };\n\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        192,
+        16
+      ],
+      "id": "3054511f-f046-41ca-8400-03561fd1bef9",
+      "name": "Clean Website Content"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Website Content:\n\n{{ $json.content }}",
+        "options": {
+          "systemMessage": "You are an expert Competitive Intelligence Analyst.\n\nYour task is to analyze a competitor's website content and extract ONLY meaningful business information.\n\nIMPORTANT:\n\nOnly extract information that explicitly exists in the provided website content.\n\nDo NOT use your prior knowledge.\n\nDo NOT infer missing information.\n\nIf a field is not present, return an empty array or empty string.\n\nNever hallucinate.\nIgnore:\n- Navigation menus\n- Footer links\n- Login buttons\n- Cookie notices\n- Privacy policies\n- Terms of service\n- Duplicate text\n\nExtract only:\n\n- Company Name\n- Website Title\n- Products\n- Services\n- Pricing Information\n- New Features\n- Latest Announcements\n- Latest News\n- Research Updates\n- Career Opportunities\n- Calls To Action\n\nReturn ONLY valid JSON.\n\n{\n  \"company\": \"\",\n  \"title\": \"\",\n  \"products\": [],\n  \"services\": [],\n  \"pricing\": [],\n  \"features\": [],\n  \"announcements\": [],\n  \"news\": [],\n  \"research\": [],\n  \"careers\": [],\n  \"cta\": [],\n  \"summary\": \"\"\n}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        400,
+        16
+      ],
+      "id": "7bd4d8a3-9110-4ec3-a77b-85fb8825d3d0",
+      "name": "Extract Competitor Snapshot"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n\n  let output = item.json.output || \"\";\n\n  output = output\n    .replace(/```json/gi, \"\")\n    .replace(/```/g, \"\")\n    .trim();\n\n  let extracted;\n\n  try {\n    extracted = JSON.parse(output);\n  } catch (e) {\n    throw new Error(`Invalid JSON returned by AI:\\n${output}`);\n  }\n\n  return {\n    json: extracted\n  };\n\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        32
+      ],
+      "id": "d7892145-2f13-46df-8bf6-da2d22df53d7",
+      "name": "Parse Extracted Snapshot"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "Day-14",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 398261307,
+          "mode": "list",
+          "cachedResultName": "Snapshots",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit#gid=398261307"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Company",
+              "lookupValue": "={{ $json.company }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        912,
+        32
+      ],
+      "id": "93d606e8-3709-42f3-9024-43671bb9aaa7",
+      "name": "Load Previous Snapshot",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "6424a1c2-3b5f-4e95-a3af-b6905322b421",
+              "leftValue": "={{ Object.keys($json).length === 0 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1120,
+        32
+      ],
+      "id": "78e4a4d6-8555-4487-a986-26b10f27794f",
+      "name": "Snapshot Exists?"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1232,
+        -128
+      ],
+      "id": "ce30babb-ce55-48c9-835a-874f9c29a418",
+      "name": "Merge New Snapshots"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Remove empty objects from the Merge output\nreturn items.filter(item => {\n  return Object.keys(item.json).length > 0;\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        -224
+      ],
+      "id": "97dfc854-276c-4c42-8ef0-febb8d010a9e",
+      "name": "Prepare Snapshot Record"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "Day-14",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 398261307,
+          "mode": "list",
+          "cachedResultName": "Snapshots",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit#gid=398261307"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Company": "={{$('Parse Extracted Snapshot').item.json.company}}",
+            "Snapshots": "={{ JSON.stringify($json) }}",
+            "last_checked": "={{$now}}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Company",
+              "displayName": "Company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Snapshots",
+              "displayName": "Snapshots",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "last_checked",
+              "displayName": "last_checked",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1632,
+        -224
+      ],
+      "id": "0159382e-0719-449d-95b4-9f0a0b83503d",
+      "name": "Save Initial Snapshot",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n\n  let previousSnapshot = {};\n\n  try {\n    previousSnapshot = JSON.parse(item.json.Snapshots);\n  } catch (e) {\n    throw new Error(\"Invalid Snapshot JSON\");\n  }\n\n  return {\n    json: {\n      previous: previousSnapshot,\n      last_checked: item.json.last_checked\n    }\n  };\n\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1312,
+        112
+      ],
+      "id": "6980b89c-cee0-49d0-be09-a93aed830d1e",
+      "name": "Parse Previous Snapshot"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1456,
+        288
+      ],
+      "id": "86d9aa72-6407-4fd2-8f90-740c9ac80ec5",
+      "name": "Merge Previous + Current Snapshot"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=PREVIOUS SNAPSHOT\n\n{{ JSON.stringify($json.previous, null, 2) }}\n\nCURRENT SNAPSHOT\n\n{{ JSON.stringify($json) }}",
+        "options": {
+          "systemMessage": "You are an expert Competitive Intelligence Analyst.\n\nYou will receive two competitor snapshots.\n\nThe first snapshot is the PREVIOUS version.\nThe second snapshot is the CURRENT version.\n\nCompare them carefully.\n\nRules:\n\n- Compare only business information.\n- Ignore formatting differences.\n- Ignore ordering of arrays.\n- Ignore whitespace.\n- Ignore duplicate values.\n- Ignore summaries.\n\nDetect changes in:\n\n• Products\n• Services\n• Features\n• Pricing\n• Announcements\n• News\n• Research\n• Careers\n• Calls To Action\n\nIf nothing changed return:\n\n{\n  \"changed\": false,\n  \"summary\": \"No significant changes detected.\",\n  \"changes\": [],\n  \"impact\": \"None\"\n}\n\nIf changes exist return:\n\n{\n  \"changed\": true,\n  \"summary\": \"\",\n  \"changes\": [],\n  \"impact\": \"Low\"\n}\n\nReturn ONLY valid JSON."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1664,
+        288
+      ],
+      "id": "66e56360-daab-4efb-8c5a-7708a1b83af0",
+      "name": "Compare Snapshots"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  let result = item.json.output;\n\n  if (typeof result === \"string\") {\n    result = result\n      .replace(/```json/g, \"\")\n      .replace(/```/g, \"\")\n      .trim();\n\n    result = JSON.parse(result);\n  }\n\n  return {\n    json: result\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2016,
+        288
+      ],
+      "id": "09b69e21-5399-4d03-a7b2-260d2c2f536c",
+      "name": "Parse Comparison Result"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f328cf3b-4130-4a5b-aab3-9fa6da1677c7",
+              "leftValue": "={{$json.changed}}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2224,
+        288
+      ],
+      "id": "096d1b95-31e3-441d-ae61-9901a0d1f26c",
+      "name": "Changes Detected?1"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2304,
+        112
+      ],
+      "id": "81d57f7a-a7ee-445d-b699-eab0e247b20a",
+      "name": "Prepare Notification"
+    },
+    {
+      "parameters": {
+        "sendTo": "YOUR_EMAIL@example.com",
+        "subject": "=🚨 Competitor Update Detected - {{$json.company}}",
+        "emailType": "text",
+        "message": "=A competitor website has changed.\nCompany: {{$json.company}} \nImpact: {{$json.impact}}\nSummary: {{$json.summary}}\nDetailed Changes: {{ JSON.stringify($json.changes, null, 2) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2528,
+        112
+      ],
+      "id": "9ef71fd1-02a8-46f1-b10b-7e893a631583",
+      "name": "Send Change Alert",
+      "webhookId": "YOUR_WEBHOOK_ID",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_GMAIL_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -432,
+        16
+      ],
+      "id": "487383fa-1c21-48a6-b7a4-42b97b56fb84",
+      "name": "Schedule Trigger"
+    }
+  ],
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Extract Competitor Snapshot",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Compare Snapshots",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load competitor List": {
+      "main": [
+        [
+          {
+            "node": "Fetch Website HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Website HTML": {
+      "main": [
+        [
+          {
+            "node": "Clean Website Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean Website Content": {
+      "main": [
+        [
+          {
+            "node": "Extract Competitor Snapshot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Competitor Snapshot": {
+      "main": [
+        [
+          {
+            "node": "Parse Extracted Snapshot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Extracted Snapshot": {
+      "main": [
+        [
+          {
+            "node": "Load Previous Snapshot",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge New Snapshots",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Previous + Current Snapshot",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Load Previous Snapshot": {
+      "main": [
+        [
+          {
+            "node": "Snapshot Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Snapshot Exists?": {
+      "main": [
+        [
+          {
+            "node": "Merge New Snapshots",
+            "type": "main",
+            "index": 1
+          }
+        ],
+        [
+          {
+            "node": "Parse Previous Snapshot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge New Snapshots": {
+      "main": [
+        [
+          {
+            "node": "Prepare Snapshot Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Snapshot Record": {
+      "main": [
+        [
+          {
+            "node": "Save Initial Snapshot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Initial Snapshot": {
+      "main": [
+        []
+      ]
+    },
+    "Parse Previous Snapshot": {
+      "main": [
+        [
+          {
+            "node": "Merge Previous + Current Snapshot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Previous + Current Snapshot": {
+      "main": [
+        [
+          {
+            "node": "Compare Snapshots",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Prepare Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compare Snapshots": {
+      "main": [
+        [
+          {
+            "node": "Parse Comparison Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Comparison Result": {
+      "main": [
+        [
+          {
+            "node": "Changes Detected?1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Changes Detected?1": {
+      "main": [
+        [
+          {
+            "node": "Prepare Notification",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Prepare Notification": {
+      "main": [
+        [
+          {
+            "node": "Send Change Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Load competitor List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "timeSavedPerExecution": 2
+  },
+  "staticData": {
+    "node:Schedule Trigger": {
+      "recurrenceRules": []
+    }
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "pinData": {},
+  "versionId": "76ba947e-2c24-443a-8809-90291ae35539",
+  "activeVersionId": "76ba947e-2c24-443a-8809-90291ae35539",
+  "versionCounter": 223,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-07-13T07:02:54.771Z",
+      "createdAt": "2026-07-13T07:02:54.771Z",
+      "role": "workflow:owner",
+      "workflowId": "5LlmdrBaNHeLhmaf",
+      "projectId": "YOUR_PROJECT_ID",
+      "project": {
+        "updatedAt": "2026-06-04T07:55:05.260Z",
+        "createdAt": "2026-06-04T07:52:41.897Z",
+        "id": "YOUR_PROJECT_ID",
+        "name": "Chandu M <YOUR_EMAIL@example.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "YOUR_USER_ID"
+      }
+    }
+  ],
+  "tags": [
+    {
+      "updatedAt": "2026-06-09T06:33:27.317Z",
+      "createdAt": "2026-06-09T06:33:27.317Z",
+      "id": "8ZUaEfWmhomQ0P8p",
+      "name": "n8n"
+    },
+    {
+      "updatedAt": "2026-07-14T10:15:52.161Z",
+      "createdAt": "2026-07-14T10:15:52.161Z",
+      "id": "IMP8j7p8wQifLDeE",
+      "name": "Monitor"
+    },
+    {
+      "updatedAt": "2026-06-09T06:33:15.749Z",
+      "createdAt": "2026-06-09T06:33:15.749Z",
+      "id": "OqenQjr9s45g7AEO",
+      "name": "ai"
+    },
+    {
+      "updatedAt": "2026-06-09T06:33:45.548Z",
+      "createdAt": "2026-06-09T06:33:45.548Z",
+      "id": "SSAFLny1wplVixFm",
+      "name": "ai agent"
+    },
+    {
+      "updatedAt": "2026-06-19T18:47:33.921Z",
+      "createdAt": "2026-06-19T18:47:33.921Z",
+      "id": "adTN6XPgfo01vqx0",
+      "name": "ai automation"
+    }
+  ],
+  "parentFolder": null,
+  "activeVersion": {
+    "updatedAt": "2026-07-20T06:46:17.000Z",
+    "createdAt": "2026-07-20T06:45:48.971Z",
+    "versionId": "76ba947e-2c24-443a-8809-90291ae35539",
+    "workflowId": "5LlmdrBaNHeLhmaf",
+    "nodes": [
+      {
+        "parameters": {
+          "model": {
+            "__rl": true,
+            "value": "openai/gpt-oss-20b",
+            "mode": "list",
+            "cachedResultName": "openai/gpt-oss-20b"
+          },
+          "builtInTools": {},
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+        "typeVersion": 1.3,
+        "position": [
+          272,
+          224
+        ],
+        "id": "21740a4f-bcbe-487e-be6c-e581b534f0fa",
+        "name": "OpenAI Chat Model",
+        "credentials": {
+          "openAiApi": {
+            "id": "YOUR_OPENAI_CREDENTIAL_ID",
+            "name": "OpenAI account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "model": {
+            "__rl": true,
+            "value": "openai/gpt-oss-20b",
+            "mode": "list",
+            "cachedResultName": "openai/gpt-oss-20b"
+          },
+          "builtInTools": {},
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+        "typeVersion": 1.3,
+        "position": [
+          1536,
+          496
+        ],
+        "id": "35c893ff-7805-4318-ae32-38815b2897c0",
+        "name": "OpenAI Chat Model1",
+        "credentials": {
+          "openAiApi": {
+            "id": "YOUR_OPENAI_CREDENTIAL_ID",
+            "name": "OpenAI account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "documentId": {
+            "__rl": true,
+            "value": "YOUR_GOOGLE_SHEET_ID",
+            "mode": "list",
+            "cachedResultName": "Day-14",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit?usp=drivesdk"
+          },
+          "sheetName": {
+            "__rl": true,
+            "value": "gid=0",
+            "mode": "list",
+            "cachedResultName": "competetors",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit#gid=0"
+          },
+          "filtersUI": {
+            "values": [
+              {
+                "lookupColumn": "Status",
+                "lookupValue": "Active"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.googleSheets",
+        "typeVersion": 4.7,
+        "position": [
+          -224,
+          16
+        ],
+        "id": "ed65d7a3-2f6f-4ff1-9bbf-f31963d10505",
+        "name": "Load competitor List",
+        "credentials": {
+          "googleSheetsOAuth2Api": {
+            "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+            "name": "Google Sheets account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "url": "={{$json.Website}}",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "User-Agent",
+                "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/138.0 Safari/537.36"
+              },
+              {
+                "name": "Accept",
+                "value": "text/html"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          -16,
+          16
+        ],
+        "id": "b8a9fcec-3a1b-425b-b83f-50d60e87c85f",
+        "name": "Fetch Website HTML",
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "jsCode": "// Process each incoming item\nreturn items.map(item => {\n\n  let html = item.json.data || \"\";\n\n  // Remove unwanted elements\n  html = html\n    .replace(/<script[\\s\\S]*?<\\/script>/gi, \"\")\n    .replace(/<style[\\s\\S]*?<\\/style>/gi, \"\")\n    .replace(/<svg[\\s\\S]*?<\\/svg>/gi, \"\")\n    .replace(/<noscript[\\s\\S]*?<\\/noscript>/gi, \"\")\n    .replace(/<iframe[\\s\\S]*?<\\/iframe>/gi, \"\")\n    .replace(/<!--[\\s\\S]*?-->/g, \"\");\n\n  // Strip HTML tags\n  let text = html.replace(/<[^>]+>/g, \"\\n\");\n\n  // Decode common HTML entities\n  text = text\n    .replace(/&nbsp;/g, \" \")\n    .replace(/&amp;/g, \"&\")\n    .replace(/&lt;/g, \"<\")\n    .replace(/&gt;/g, \">\")\n    .replace(/&quot;/g, '\"')\n    .replace(/&#39;/g, \"'\")\n    .replace(/&#x27;/g, \"'\");\n\n  // Split into lines\n  let lines = text\n    .split(\"\\n\")\n    .map(line => line.trim())\n    .filter(line => line.length > 2);\n\n  // Remove duplicate lines\n  lines = [...new Set(lines)];\n\n  // Remove noisy/repeated content\n  const blacklist = [\n    \"Skip to main content\",\n    \"Log in\",\n    \"Login\",\n    \"Download app\",\n    \"Cookie\",\n    \"Cookies\",\n    \"Privacy Policy\",\n    \"Terms of Use\",\n    \"Terms & Policies\",\n    \"Manage Cookies\",\n    \"Accept all cookies\",\n    \"Reject all cookies\",\n    \"Necessary\",\n    \"Analytics\",\n    \"Marketing\",\n    \"English\",\n    \"United States\"\n  ];\n\n  lines = lines.filter(line => {\n    return !blacklist.some(word =>\n      line.toLowerCase().includes(word.toLowerCase())\n    );\n  });\n\n  // Join back together\n  text = lines.join(\"\\n\");\n\n  // Normalize whitespace\n  text = text\n    .replace(/\\n{2,}/g, \"\\n\")\n    .replace(/[ \\t]{2,}/g, \" \")\n    .trim();\n\n  // Limit by words instead of characters\n  const MAX_WORDS = 1500;\n\n  const words = text.split(/\\s+/);\n\n  if (words.length > MAX_WORDS) {\n    text = words.slice(0, MAX_WORDS).join(\" \");\n  }\n\n  return {\n    json: {\n      company: item.json.Company,\n      website: item.json.Website,\n      scraped_at: new Date().toISOString(),\n      content: text\n    }\n  };\n\n});"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          192,
+          16
+        ],
+        "id": "3054511f-f046-41ca-8400-03561fd1bef9",
+        "name": "Clean Website Content"
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "=Website Content:\n\n{{ $json.content }}",
+          "options": {
+            "systemMessage": "You are an expert Competitive Intelligence Analyst.\n\nYour task is to analyze a competitor's website content and extract ONLY meaningful business information.\n\nIMPORTANT:\n\nOnly extract information that explicitly exists in the provided website content.\n\nDo NOT use your prior knowledge.\n\nDo NOT infer missing information.\n\nIf a field is not present, return an empty array or empty string.\n\nNever hallucinate.\nIgnore:\n- Navigation menus\n- Footer links\n- Login buttons\n- Cookie notices\n- Privacy policies\n- Terms of service\n- Duplicate text\n\nExtract only:\n\n- Company Name\n- Website Title\n- Products\n- Services\n- Pricing Information\n- New Features\n- Latest Announcements\n- Latest News\n- Research Updates\n- Career Opportunities\n- Calls To Action\n\nReturn ONLY valid JSON.\n\n{\n  \"company\": \"\",\n  \"title\": \"\",\n  \"products\": [],\n  \"services\": [],\n  \"pricing\": [],\n  \"features\": [],\n  \"announcements\": [],\n  \"news\": [],\n  \"research\": [],\n  \"careers\": [],\n  \"cta\": [],\n  \"summary\": \"\"\n}"
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 3.1,
+        "position": [
+          400,
+          16
+        ],
+        "id": "7bd4d8a3-9110-4ec3-a77b-85fb8825d3d0",
+        "name": "Extract Competitor Snapshot"
+      },
+      {
+        "parameters": {
+          "jsCode": "return items.map(item => {\n\n  let output = item.json.output || \"\";\n\n  output = output\n    .replace(/```json/gi, \"\")\n    .replace(/```/g, \"\")\n    .trim();\n\n  let extracted;\n\n  try {\n    extracted = JSON.parse(output);\n  } catch (e) {\n    throw new Error(`Invalid JSON returned by AI:\\n${output}`);\n  }\n\n  return {\n    json: extracted\n  };\n\n});"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          720,
+          32
+        ],
+        "id": "d7892145-2f13-46df-8bf6-da2d22df53d7",
+        "name": "Parse Extracted Snapshot"
+      },
+      {
+        "parameters": {
+          "documentId": {
+            "__rl": true,
+            "value": "YOUR_GOOGLE_SHEET_ID",
+            "mode": "list",
+            "cachedResultName": "Day-14",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit?usp=drivesdk"
+          },
+          "sheetName": {
+            "__rl": true,
+            "value": 398261307,
+            "mode": "list",
+            "cachedResultName": "Snapshots",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit#gid=398261307"
+          },
+          "filtersUI": {
+            "values": [
+              {
+                "lookupColumn": "Company",
+                "lookupValue": "={{ $json.company }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.googleSheets",
+        "typeVersion": 4.7,
+        "position": [
+          912,
+          32
+        ],
+        "id": "93d606e8-3709-42f3-9024-43671bb9aaa7",
+        "name": "Load Previous Snapshot",
+        "alwaysOutputData": true,
+        "credentials": {
+          "googleSheetsOAuth2Api": {
+            "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+            "name": "Google Sheets account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "6424a1c2-3b5f-4e95-a3af-b6905322b421",
+                "leftValue": "={{ Object.keys($json).length === 0 }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "looseTypeValidation": true,
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          1120,
+          32
+        ],
+        "id": "78e4a4d6-8555-4487-a986-26b10f27794f",
+        "name": "Snapshot Exists?"
+      },
+      {
+        "parameters": {},
+        "type": "n8n-nodes-base.merge",
+        "typeVersion": 3.2,
+        "position": [
+          1232,
+          -128
+        ],
+        "id": "ce30babb-ce55-48c9-835a-874f9c29a418",
+        "name": "Merge New Snapshots"
+      },
+      {
+        "parameters": {
+          "jsCode": "// Remove empty objects from the Merge output\nreturn items.filter(item => {\n  return Object.keys(item.json).length > 0;\n});"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1440,
+          -224
+        ],
+        "id": "97dfc854-276c-4c42-8ef0-febb8d010a9e",
+        "name": "Prepare Snapshot Record"
+      },
+      {
+        "parameters": {
+          "operation": "append",
+          "documentId": {
+            "__rl": true,
+            "value": "YOUR_GOOGLE_SHEET_ID",
+            "mode": "list",
+            "cachedResultName": "Day-14",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit?usp=drivesdk"
+          },
+          "sheetName": {
+            "__rl": true,
+            "value": 398261307,
+            "mode": "list",
+            "cachedResultName": "Snapshots",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit#gid=398261307"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "Company": "={{$('Parse Extracted Snapshot').item.json.company}}",
+              "Snapshots": "={{ JSON.stringify($json) }}",
+              "last_checked": "={{$now}}"
+            },
+            "matchingColumns": [],
+            "schema": [
+              {
+                "id": "Company",
+                "displayName": "Company",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "Snapshots",
+                "displayName": "Snapshots",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "last_checked",
+                "displayName": "last_checked",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.googleSheets",
+        "typeVersion": 4.7,
+        "position": [
+          1632,
+          -224
+        ],
+        "id": "0159382e-0719-449d-95b4-9f0a0b83503d",
+        "name": "Save Initial Snapshot",
+        "credentials": {
+          "googleSheetsOAuth2Api": {
+            "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+            "name": "Google Sheets account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "return items.map(item => {\n\n  let previousSnapshot = {};\n\n  try {\n    previousSnapshot = JSON.parse(item.json.Snapshots);\n  } catch (e) {\n    throw new Error(\"Invalid Snapshot JSON\");\n  }\n\n  return {\n    json: {\n      previous: previousSnapshot,\n      last_checked: item.json.last_checked\n    }\n  };\n\n});"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1312,
+          112
+        ],
+        "id": "6980b89c-cee0-49d0-be09-a93aed830d1e",
+        "name": "Parse Previous Snapshot"
+      },
+      {
+        "parameters": {
+          "mode": "combine",
+          "combineBy": "combineByPosition",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.merge",
+        "typeVersion": 3.2,
+        "position": [
+          1456,
+          288
+        ],
+        "id": "86d9aa72-6407-4fd2-8f90-740c9ac80ec5",
+        "name": "Merge Previous + Current Snapshot"
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "=PREVIOUS SNAPSHOT\n\n{{ JSON.stringify($json.previous, null, 2) }}\n\nCURRENT SNAPSHOT\n\n{{ JSON.stringify($json) }}",
+          "options": {
+            "systemMessage": "You are an expert Competitive Intelligence Analyst.\n\nYou will receive two competitor snapshots.\n\nThe first snapshot is the PREVIOUS version.\nThe second snapshot is the CURRENT version.\n\nCompare them carefully.\n\nRules:\n\n- Compare only business information.\n- Ignore formatting differences.\n- Ignore ordering of arrays.\n- Ignore whitespace.\n- Ignore duplicate values.\n- Ignore summaries.\n\nDetect changes in:\n\n• Products\n• Services\n• Features\n• Pricing\n• Announcements\n• News\n• Research\n• Careers\n• Calls To Action\n\nIf nothing changed return:\n\n{\n  \"changed\": false,\n  \"summary\": \"No significant changes detected.\",\n  \"changes\": [],\n  \"impact\": \"None\"\n}\n\nIf changes exist return:\n\n{\n  \"changed\": true,\n  \"summary\": \"\",\n  \"changes\": [],\n  \"impact\": \"Low\"\n}\n\nReturn ONLY valid JSON."
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 3.1,
+        "position": [
+          1664,
+          288
+        ],
+        "id": "66e56360-daab-4efb-8c5a-7708a1b83af0",
+        "name": "Compare Snapshots"
+      },
+      {
+        "parameters": {
+          "jsCode": "return items.map(item => {\n  let result = item.json.output;\n\n  if (typeof result === \"string\") {\n    result = result\n      .replace(/```json/g, \"\")\n      .replace(/```/g, \"\")\n      .trim();\n\n    result = JSON.parse(result);\n  }\n\n  return {\n    json: result\n  };\n});"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2016,
+          288
+        ],
+        "id": "09b69e21-5399-4d03-a7b2-260d2c2f536c",
+        "name": "Parse Comparison Result"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "f328cf3b-4130-4a5b-aab3-9fa6da1677c7",
+                "leftValue": "={{$json.changed}}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          2224,
+          288
+        ],
+        "id": "096d1b95-31e3-441d-ae61-9901a0d1f26c",
+        "name": "Changes Detected?1"
+      },
+      {
+        "parameters": {
+          "mode": "combine",
+          "combineBy": "combineByPosition",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.merge",
+        "typeVersion": 3.2,
+        "position": [
+          2304,
+          112
+        ],
+        "id": "81d57f7a-a7ee-445d-b699-eab0e247b20a",
+        "name": "Prepare Notification"
+      },
+      {
+        "parameters": {
+          "sendTo": "YOUR_EMAIL@example.com",
+          "subject": "=🚨 Competitor Update Detected - {{$json.company}}",
+          "emailType": "text",
+          "message": "=A competitor website has changed.\nCompany: {{$json.company}} \nImpact: {{$json.impact}}\nSummary: {{$json.summary}}\nDetailed Changes: {{ JSON.stringify($json.changes, null, 2) }}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.2,
+        "position": [
+          2528,
+          112
+        ],
+        "id": "9ef71fd1-02a8-46f1-b10b-7e893a631583",
+        "name": "Send Change Alert",
+        "webhookId": "YOUR_WEBHOOK_ID",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "YOUR_GMAIL_CREDENTIAL_ID",
+            "name": "Gmail account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "rule": {
+            "interval": [
+              {}
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.3,
+        "position": [
+          -432,
+          16
+        ],
+        "id": "487383fa-1c21-48a6-b7a4-42b97b56fb84",
+        "name": "Schedule Trigger"
+      }
+    ],
+    "connections": {
+      "OpenAI Chat Model": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "Extract Competitor Snapshot",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "OpenAI Chat Model1": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "Compare Snapshots",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Load competitor List": {
+        "main": [
+          [
+            {
+              "node": "Fetch Website HTML",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch Website HTML": {
+        "main": [
+          [
+            {
+              "node": "Clean Website Content",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Clean Website Content": {
+        "main": [
+          [
+            {
+              "node": "Extract Competitor Snapshot",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Extract Competitor Snapshot": {
+        "main": [
+          [
+            {
+              "node": "Parse Extracted Snapshot",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Parse Extracted Snapshot": {
+        "main": [
+          [
+            {
+              "node": "Load Previous Snapshot",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Merge New Snapshots",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Merge Previous + Current Snapshot",
+              "type": "main",
+              "index": 1
+            }
+          ]
+        ]
+      },
+      "Load Previous Snapshot": {
+        "main": [
+          [
+            {
+              "node": "Snapshot Exists?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Snapshot Exists?": {
+        "main": [
+          [
+            {
+              "node": "Merge New Snapshots",
+              "type": "main",
+              "index": 1
+            }
+          ],
+          [
+            {
+              "node": "Parse Previous Snapshot",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Merge New Snapshots": {
+        "main": [
+          [
+            {
+              "node": "Prepare Snapshot Record",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prepare Snapshot Record": {
+        "main": [
+          [
+            {
+              "node": "Save Initial Snapshot",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Save Initial Snapshot": {
+        "main": [
+          []
+        ]
+      },
+      "Parse Previous Snapshot": {
+        "main": [
+          [
+            {
+              "node": "Merge Previous + Current Snapshot",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Merge Previous + Current Snapshot": {
+        "main": [
+          [
+            {
+              "node": "Compare Snapshots",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Prepare Notification",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Compare Snapshots": {
+        "main": [
+          [
+            {
+              "node": "Parse Comparison Result",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Parse Comparison Result": {
+        "main": [
+          [
+            {
+              "node": "Changes Detected?1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Changes Detected?1": {
+        "main": [
+          [
+            {
+              "node": "Prepare Notification",
+              "type": "main",
+              "index": 1
+            }
+          ]
+        ]
+      },
+      "Prepare Notification": {
+        "main": [
+          [
+            {
+              "node": "Send Change Alert",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Schedule Trigger": {
+        "main": [
+          [
+            {
+              "node": "Load competitor List",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Chandu M",
+    "name": "AI Competitor Intelligence Monitor",
+    "description": "Just replaced manual trigger with schdule trigger",
+    "autosaved": true,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-07-20T06:46:17.097Z",
+        "id": 81,
+        "workflowId": "5LlmdrBaNHeLhmaf",
+        "versionId": "76ba947e-2c24-443a-8809-90291ae35539",
+        "event": "activated",
+        "userId": "YOUR_USER_ID"
+      },
+      {
+        "createdAt": "2026-07-20T06:46:28.379Z",
+        "id": 83,
+        "workflowId": "5LlmdrBaNHeLhmaf",
+        "versionId": "76ba947e-2c24-443a-8809-90291ae35539",
+        "event": "activated",
+        "userId": "YOUR_USER_ID"
+      },
+      {
+        "createdAt": "2026-07-20T06:46:28.321Z",
+        "id": 82,
+        "workflowId": "5LlmdrBaNHeLhmaf",
+        "versionId": "76ba947e-2c24-443a-8809-90291ae35539",
+        "event": "deactivated",
+        "userId": "YOUR_USER_ID"
+      }
+    ]
+  },
+  "scopes": [
+    "execution:reveal",
+    "workflow:create",
+    "workflow:delete",
+    "workflow:disableRedaction",
+    "workflow:enableRedaction",
+    "workflow:execute",
+    "workflow:execute-chat",
+    "workflow:export",
+    "workflow:list",
+    "workflow:move",
+    "workflow:publish",
+    "workflow:read",
+    "workflow:share",
+    "workflow:unpublish",
+    "workflow:unshare",
+    "workflow:update"
+  ],
+  "checksum": "f8c88cb7d9b9b33f7d302ced9475b2dd1aa4f22ef7aa22195cc124c0e17f1735"
+}
