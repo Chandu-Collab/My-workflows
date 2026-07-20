@@ -152,7 +152,7 @@ Automatically convert bug reports into structured engineering tickets using AI.
 
 ---
 
-### 📚 AI Research & Insights Agent (NEW 🔥)
+### 📚 AI Research & Insights Agent
 
 Automatically researches any topic across the web, analyzes multiple articles using AI, and delivers a comprehensive, factual research report directly to your inbox.
 
@@ -164,6 +164,21 @@ Automatically researches any topic across the web, analyzes multiple articles us
 - 📧 Automated email delivery via Gmail
 
 📁 **Folder:** [AI Research & Insights Agent](./workflows/AI%20Research%20&%20Insights%20Agent/)
+
+---
+
+### 🕵️‍♂️ AI Competitor Intelligence Monitor (NEW 🔥)
+
+Automatically monitor competitor websites, detect business changes, and receive instant email alerts.
+
+✨ **Features:**
+- 🔍 Monitor multiple competitor websites and scrape content
+- 🧠 AI extracts structured business information (products, services, pricing)
+- 📊 Stores historical snapshots in Google Sheets
+- 🔄 AI compares current data with previous snapshots to detect changes
+- 📧 Instantly sends email alerts when meaningful updates are found
+
+📁 **Folder:** [AI Competitor Intelligence Monitor](./workflows/AI%20Competitor%20Intelligence%20Monitor/)
 
 
 ## ⚙️ Tech Stack
@@ -203,6 +218,7 @@ ai-automation-workflows/
 ├── workflows/AI Order Priority & Notification System/
 ├── workflows/AI Bug Report Auto Ticket System/
 ├── workflows/AI Research & Insights Agent/
+├── workflows/AI Competitor Intelligence Monitor/
 ```
 
 ---
