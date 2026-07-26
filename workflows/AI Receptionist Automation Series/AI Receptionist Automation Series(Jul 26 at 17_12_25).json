@@ -1,0 +1,2979 @@
+{
+  "updatedAt": "2026-07-26T17:41:26.296Z",
+  "createdAt": "2026-07-16T07:09:25.377Z",
+  "id": "S1toQj3vtjnETebv",
+  "name": "AI Receptionist Automation Series",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ai-receptionist",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "ef0a9e4e-e114-4b10-a389-6152ebb862b5",
+      "name": "Webhook",
+      "webhookId": "247d7835-f21b-4948-8425-a6e92a465ea3"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e9bdddb9-6371-4dab-a342-a22a5cce8013",
+              "name": "sessionId",
+              "value": "={{ $json.body.sessionId }}",
+              "type": "string"
+            },
+            {
+              "id": "95ef39a6-4a05-438d-a3a6-d9f7552f4d32",
+              "name": "currentTime",
+              "value": "={{ $now }}",
+              "type": "string"
+            },
+            {
+              "id": "51b98940-5453-4259-b5a0-d07eefd9387c",
+              "name": "customer.name",
+              "value": "={{ $json.body.customer.name }}",
+              "type": "string"
+            },
+            {
+              "id": "5d6b6181-c203-4052-99cf-04320f614e52",
+              "name": "customer.email",
+              "value": "={{ $json.body.customer.email }}",
+              "type": "string"
+            },
+            {
+              "id": "21e75003-de2d-403d-bc1f-727d63880b6d",
+              "name": "customer.phone",
+              "value": "={{ $json.body.customer.phone }}",
+              "type": "string"
+            },
+            {
+              "id": "3e0182f0-8cf4-47c9-83da-b2c000a1159e",
+              "name": "appointment.service",
+              "value": "={{ $json.body.appointment.service }}",
+              "type": "string"
+            },
+            {
+              "id": "d7997196-cf5c-4780-ae24-625239255f21",
+              "name": "appointment.date",
+              "value": "={{ $json.body.appointment.date }}",
+              "type": "string"
+            },
+            {
+              "id": "945a97d4-35b5-4d42-af2c-0fd08d62ed4d",
+              "name": "appointment.time",
+              "value": "={{ $json.body.appointment.time }}",
+              "type": "string"
+            },
+            {
+              "id": "7da505f0-0926-4900-83a5-a76d64eed8f2",
+              "name": "message",
+              "value": "={{ $json.body.message }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "fb8500f0-818b-4c86-bd1a-4364a65cba94",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Current Date & Time\n{{ $json.currentTime }}\n\nCustomer Information\n\nCustomer Name: {{ $json.customer.name }}\nCustomer Email: {{ $json.customer.email }}\nCustomer Phone: {{ $json.customer.phone }}\n\nCurrent Appointment Information\n\nCurrent Service: {{ $json.appointment.service }}\nCurrent Appointment Date: {{ $json.appointment.date }}\nCurrent Appointment Time: {{ $json.appointment.time }}\n\nLatest Customer Message\n\n{{ $json.message }}",
+        "options": {
+          "systemMessage": "You are a professional AI Receptionist for a business.\n\nYour responsibilities are:\n\n- Understand the customer's request.\n- Determine the customer's intent.\n- Answer business-related questions.\n- Collect and qualify potential leads.\n- Help customers book appointments.\n- Escalate to a human when necessary.\n- Never invent business information.\n- Keep responses friendly, concise and professional.\n\nYou will receive four inputs:\n\n1. Current Date & Time\n2. Customer Information\n3. Current Appointment Information\n4. Customer Message\n\n==================================================\nSOURCE OF TRUTH\n==================================================\n\nThe structured Customer Information and Current Appointment Information are the source of truth.\n\nAlways use these values before analyzing the customer's message.\n\nThe customer's message should only be used to:\n\n- determine intent\n- update existing appointment details\n- fill missing appointment fields\n- identify lead information\n\nNever ignore valid structured information.\n\nIf customer information already exists, never ask for it again.\n\n==================================================\nINTENTS\n==================================================\n\nIntent must ALWAYS be exactly one of:\n\n- appointment\n- faq\n- lead\n- human\n\n==================================================\nINTENT CLASSIFICATION RULES\n==================================================\n\n-------------------------\nAppointment\n-------------------------\n\nChoose \"appointment\" ONLY if the customer clearly wants to:\n\n- book an appointment\n- schedule an appointment\n- reserve a slot\n- confirm an appointment\n- reschedule an appointment\n- cancel an appointment\n\nExamples:\n\n- I want to book a haircut.\n- Schedule Hair Spa tomorrow.\n- Reserve a slot for Friday.\n- Book me at 3 PM.\n- Can I book an appointment?\n- Change my appointment.\n- Cancel my booking.\n\nIMPORTANT:\n\nMentioning a service alone DOES NOT mean an appointment.\n\nExamples that are NOT appointments:\n\n- I'm interested in Hair Spa.\n- Tell me about Hair Spa.\n- I want pricing.\n- Can someone contact me?\n\nThese are LEADS.\n\n-------------------------\nLead\n-------------------------\n\nChoose \"lead\" whenever the customer shows business interest but is NOT booking yet.\n\nExamples:\n\n- I'm interested in Hair Spa.\n- Can someone contact me?\n- Please call me.\n- I'd like more information.\n- Tell me about your packages.\n- I'd like a quotation.\n- What is the cost?\n- I want to become a customer.\n- I'm interested in your services.\n\nA lead becomes complete when:\n\n- customer_name exists\n- phone exists\n- service exists\n\nIf service is missing,\n\nask ONLY:\n\n\"Which service are you interested in?\"\n\nNever ask again for:\n\n- customer name\n- email\n- phone\n\nif they already exist.\n\n-------------------------\nFAQ\n-------------------------\n\nChoose \"faq\" only if the customer is asking for business information.\n\nExamples:\n\n- Working hours\n- Address\n- Services offered\n- Parking\n- Pricing\n- Policies\n\nAnswer ONLY using the provided business knowledge.\n\nNever invent answers.\n\nIf you cannot confidently answer,\n\nset:\n\nrequires_human = true\n\n-------------------------\nHuman\n-------------------------\n\nChoose \"human\" only if:\n\n- customer explicitly asks for a human\n- complaint\n- refund\n- emergency\n- abusive language\n- legal issue\n- issue cannot be handled confidently\n\n==================================================\nPRIORITY RULES\n==================================================\n\nThese rules override everything else.\n\n1.\n\nIf the customer does NOT explicitly ask to:\n\n- book\n- schedule\n- reserve\n- reschedule\n- cancel\n\nNEVER choose \"appointment\".\n\n2.\n\nInterest in a service is ALWAYS a \"lead\".\n\n3.\n\nRequesting a callback is ALWAYS a \"lead\".\n\n4.\n\nRequesting pricing is ALWAYS a \"lead\".\n\n5.\n\nRequesting packages is ALWAYS a \"lead\".\n\n6.\n\nRequesting more information is ALWAYS a \"lead\".\n\n7.\n\nOnly classify as \"appointment\" when booking intent is clearly present.\n\n==================================================\nCUSTOMER INFORMATION\n==================================================\n\nCustomer information may already contain:\n\n- customer_name\n- email\n- phone\n\nAlways copy existing values.\n\nNever remove them.\n\nNever overwrite them unless the customer explicitly provides updated information.\n\nNever ask for information that already exists.\n\n==================================================\nAPPOINTMENT INFORMATION\n==================================================\n\nAppointment information may already contain:\n\n- service\n- appointment_date\n- appointment_time\n\nAlways preserve existing values.\n\nOnly update them if the customer explicitly changes them.\n\nNever remove existing appointment information.\n\n==================================================\nMISSING APPOINTMENT INFORMATION\n==================================================\n\nFor appointment intent:\n\nCombine:\n\n- structured appointment information\n- customer message\n\nIf any required appointment field is missing,\n\nask ONLY for the missing fields.\n\nNever ask for fields that already exist.\n\nRequired appointment fields:\n\n- customer_name\n- email\n- phone\n- service\n- appointment_date\n- appointment_time\n\n==================================================\nAPPOINTMENT READY\n==================================================\n\nAn appointment is ready ONLY when:\n\nThe customer has explicitly requested to book an appointment\n\nAND\n\nall required appointment fields exist:\n\n- customer_name\n- email\n- phone\n- service\n- appointment_date\n- appointment_time\n\nWhen complete:\n\n- confirm booking readiness\n- do not ask more questions\n- allow workflow to continue\n\n==================================================\nLEAD READY\n==================================================\n\nA lead is ready when:\n\n- customer_name exists\n- phone exists\n- service exists\n\nWhen complete:\n\nThank the customer and confirm that someone from the team will contact them shortly.\n\n==================================================\nRESPONSE RULES\n==================================================\n\nAlways be:\n\n- polite\n- professional\n- concise\n\nNever provide explanations outside the JSON.\n\nNever include markdown.\n\nNever include code blocks.\n\nReturn ONLY valid JSON.\n\n==================================================\nOUTPUT SCHEMA\n==================================================\n\n{\n  \"intent\": \"\",\n  \"reply\": \"\",\n  \"customer_name\": \"\",\n  \"email\": \"\",\n  \"phone\": \"\",\n  \"appointment_date\": \"\",\n  \"appointment_time\": \"\",\n  \"service\": \"\",\n  \"requires_human\": false\n}",
+          "maxIterations": 10
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "e4bc0dc7-386f-49ff-909b-e39c84ef2aae",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "openai/gpt-oss-20b",
+          "mode": "list",
+          "cachedResultName": "openai/gpt-oss-20b"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        368,
+        224
+      ],
+      "id": "6f926b15-1e4e-495c-a425-3d2740e8f3e5",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "PLACEHOLDER_ID",
+          "name": "PLACEHOLDER_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        512,
+        224
+      ],
+      "id": "be522116-f948-4f53-9838-affc992411d8",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get AI output\nconst aiOutput = $json.output || $json.text || $json.response;\n\n// Remove markdown if AI accidentally returns it\nconst clean = aiOutput\n  .replace(/```json/g, \"\")\n  .replace(/```/g, \"\")\n  .trim();\n\nlet parsed;\n\ntry {\n  parsed = JSON.parse(clean);\n} catch (err) {\n  parsed = {\n    intent: \"human\",\n    reply: \"I'm sorry, I couldn't understand your request. A team member will assist you shortly.\",\n    customer_name: \"\",\n    email: \"\",\n    phone: \"\",\n    appointment_date: \"\",\n    appointment_time: \"\",\n    service: \"\",\n    requires_human: true\n  };\n}\n\n// Merge original data with parsed AI output\nreturn [\n  {\n    json: {\n      ...$json,\n      ...parsed\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        768,
+        0
+      ],
+      "id": "fc47ab66-214c-4363-be4d-c3a04f98f2d1",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.intent}}",
+                    "rightValue": "faq",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "4f6a91f5-eaee-4ecc-a720-0e98875bc10c"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "FAQ"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "f21b54f9-377c-4a5c-a510-1b2d2e1489d9",
+                    "leftValue": "={{$json.intent}}",
+                    "rightValue": "appointment",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Appointment"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "14a85a8d-6c75-4ce9-a778-6f387caa9daf",
+                    "leftValue": "={{$json.intent}}",
+                    "rightValue": "lead",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Lead"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "5b10a1a6-25c0-4e28-b1cc-d15838d72bdf",
+                    "leftValue": "={{$json.intent}}",
+                    "rightValue": "human",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Human"
+            }
+          ]
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        976,
+        0
+      ],
+      "id": "8dd01b5b-1aa2-42ab-af5e-89ae627f3c18",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "ae500771-2230-4838-8767-81bd4b3f6f17",
+              "leftValue": "={{ $json.isComplete }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1456,
+        16
+      ],
+      "id": "386104ab-eee0-42e3-b3fd-5d169de41d8a",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": false,\n  \"message\": \"{{ $json.reply }}\",\n  \"missingFields\": {{ JSON.stringify($json.missingFields) }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1760,
+        112
+      ],
+      "id": "7f361f00-6650-47f6-b2bc-346245e0b110",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "753e9f70c880a44624645cb7954758af820a7f186342d475b35a2f160048c84b@group.calendar.google.com",
+          "mode": "list",
+          "cachedResultName": "Agents Shinka-6c"
+        },
+        "returnAll": true,
+        "timeMin": "={{ $json.appointment_date }}T{{ $json.appointment_time }}:00",
+        "timeMax": "={{ DateTime.fromISO($json.appointment_date + \"T\" + $json.appointment_time).plus({ minutes: 30 }).toISO() }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        1664,
+        -80
+      ],
+      "id": "18cf4c29-2353-4c22-b4d3-6556ca51daf3",
+      "name": "Get many events",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "PLACEHOLDER_ID",
+          "name": "PLACEHOLDER_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const events = $input.all();\n\nconst current = $('Code').first().json;\n\nlet isAvailable = true;\n\nif (\n  events.length > 0 &&\n  Object.keys(events[0].json).length > 0\n) {\n  isAvailable = false;\n}\n\nreturn [\n  {\n    json: {\n      ...current,\n      isAvailable,\n      eventCount: events.length\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1872,
+        -80
+      ],
+      "id": "3e1a7ccc-144a-4620-bc51-577c98f4e3d1",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\n\nconst missingFields = [];\n\nif (!item.service) {\n  missingFields.push(\"service\");\n}\n\nif (!item.appointment_date) {\n  missingFields.push(\"appointment_date\");\n}\n\nif (!item.appointment_time) {\n  missingFields.push(\"appointment_time\");\n}\n\nitem.missingFields = missingFields;\nitem.isComplete = missingFields.length === 0;\n\nreturn [{ json: item }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1248,
+        16
+      ],
+      "id": "d8b3b8aa-5c4c-4d00-b6a6-2513bd1c2ec1",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "a7496135-8605-4144-976d-171b9d513f0f",
+              "leftValue": "={{ $json.isAvailable }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2080,
+        -80
+      ],
+      "id": "e205cf95-564a-4e6b-9892-3b20f669f368",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": false,\n  \"message\": \"Sorry, this time slot is already booked. Please choose another available time.\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2320,
+        -48
+      ],
+      "id": "0c850b0d-771d-43ac-af75-70f087e2d4a9",
+      "name": "Respond to Webhook1"
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "753e9f70c880a44624645cb7954758af820a7f186342d475b35a2f160048c84b@group.calendar.google.com",
+          "mode": "list",
+          "cachedResultName": "Agents Shinka-6c"
+        },
+        "start": "={{ $json.appointment_date }}T{{ $json.appointment_time }}:00",
+        "end": "={{ DateTime.fromISO($json.appointment_date + \"T\" + $json.appointment_time).plus({ minutes: 30 }).toISO() }}",
+        "additionalFields": {
+          "attendees": [],
+          "description": "=Customer: {{$json.customer_name}}  Phone: {{$json.phone}}  Email: {{$json.email}}  Service: {{$json.service}}",
+          "guestsCanInviteOthers": true
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        2400,
+        -192
+      ],
+      "id": "8ccedbb1-8a13-4bb7-a7d6-a0a869814876",
+      "name": "Create an event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "PLACEHOLDER_ID",
+          "name": "PLACEHOLDER_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1vyl06_xmE4GVRjhDl4BplEwuschyR0yg_VqnrIehsV0",
+          "mode": "list",
+          "cachedResultName": "Day-15",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vyl06_xmE4GVRjhDl4BplEwuschyR0yg_VqnrIehsV0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vyl06_xmE4GVRjhDl4BplEwuschyR0yg_VqnrIehsV0/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Email": "={{ $json.email }}",
+            "Phone": "={{ $json.phone }}",
+            "Service": "={{ $json.service }}",
+            "Status": "={{ $json.status }}",
+            "Date": "={{ $json.end.dateTime }}",
+            "Time": "={{ $json.end.dateTime }}",
+            "Customer": "={{ $json.customer_name }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Customer",
+              "displayName": "Customer",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Phone",
+              "displayName": "Phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Service",
+              "displayName": "Service",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Time",
+              "displayName": "Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2640,
+        -192
+      ],
+      "id": "091b6a0d-7847-4368-8318-8afefa4d3b3a",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "PLACEHOLDER_ID",
+          "name": "PLACEHOLDER_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2480,
+        -352
+      ],
+      "id": "f94dac57-8a18-4aa7-b273-53019361adee",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.Email }}",
+        "subject": "Appointment Confirmation",
+        "message": "=<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"UTF-8\">\n</head>\n<body style=\"font-family: Arial, Helvetica, sans-serif; background:#f5f5f5; margin:0; padding:20px;\">\n\n<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\">\n<tr>\n<td align=\"center\">\n\n<table width=\"600\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#ffffff; border-radius:10px; padding:30px;\">\n\n<tr>\n<td align=\"center\">\n<h2 style=\"color:#2563eb; margin-bottom:5px;\">\n🎉 Appointment Confirmed\n</h2>\n\n<p style=\"color:#555;\">\nHello <strong>{{ $json.Customer }}</strong>,\n</p>\n\n<p style=\"color:#555;\">\nThank you for choosing our services. Your appointment has been successfully confirmed.\n</p>\n\n<hr>\n\n<h3 style=\"color:#111;\">📅 Appointment Details</h3>\n\n<table cellpadding=\"8\">\n\n<tr>\n<td><strong>Service</strong></td>\n<td>{{ $json.Service }}</td>\n</tr>\n<tr>\n<td><strong>Date</strong></td>\n<td>{{ $json.FormattedDate }}</td>\n</tr>\n\n<tr>\n<td><strong>Time</strong></td>\n<td>{{ $json.FormattedTime }}</td>\n</tr>\n<tr>\n<td><strong>Status</strong></td>\n<td style=\"color:green;\">\n{{ $json.Status }}\n</td>\n</tr>\n\n</table>\n\n<hr>\n\n<p style=\"color:#555;\">\nIf you need to reschedule or cancel your appointment, simply reply to this email or contact us before your scheduled appointment.\n</p>\n\n<p style=\"margin-top:30px;\">\nWe look forward to serving you!\n</p>\n\n<br>\n\n<p>\nRegards,<br>\n<b>AI Receptionist Team</b>\n</p>\n\n</td>\n\n</tr>\n\n</table>\n\n</td>\n\n</tr>\n\n</table>\n\n</body>\n</html>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        3024,
+        -128
+      ],
+      "id": "4813bcbf-6199-40f0-ab25-84119435b1b6",
+      "name": "Send a message",
+      "webhookId": "c47cb75e-6434-49ce-9bff-d6f0a6862979",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "PLACEHOLDER_ID",
+          "name": "PLACEHOLDER_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\n\n// Use the Time field (ISO string)\nconst dateObj = new Date(item.Time);\n\n// Format Date\nconst formattedDate = new Intl.DateTimeFormat('en-IN', {\n  weekday: 'long',\n  day: 'numeric',\n  month: 'long',\n  year: 'numeric',\n  timeZone: 'Asia/Kolkata'\n}).format(dateObj);\n\n// Format Time\nconst formattedTime = new Intl.DateTimeFormat('en-IN', {\n  hour: 'numeric',\n  minute: '2-digit',\n  hour12: true,\n  timeZone: 'Asia/Kolkata'\n}).format(dateObj);\n\nreturn [{\n  json: {\n    ...item,\n    FormattedDate: formattedDate,\n    FormattedTime: formattedTime\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2832,
+        -128
+      ],
+      "id": "fd78ab10-35fa-4756-8362-72d89a4642a7",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "bfa8ecb1-1f6b-4780-bdc8-4a1f0448e91d",
+              "name": "businessKnowledge",
+              "value": "=Business Name: Shinka Salon  Business Description: A modern salon providing professional grooming services.  Working Hours: Monday to Saturday: 9:00 AM – 7:00 PM Sunday: Closed  Services: - Haircut - Hair Spa - Hair Coloring - Beard Trim - Facial  Pricing: Haircut - ₹300 Hair Spa - ₹800 Hair Coloring - Starting from ₹1500 Beard Trim - ₹200 Facial - ₹1000  Location: MG Road, Bengaluru  Phone: +91 9876543210  Email: contact@shinkasalon.com  Booking Policy: Appointments are recommended.  Cancellation Policy: Please cancel at least 2 hours before your appointment.  Payment Methods: Cash UPI Credit Card Debit Card",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1248,
+        -368
+      ],
+      "id": "f64b27fb-28fc-47ec-88b5-6e3546a59e36",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Business Knowledge\n{{ $json.businessKnowledge }}\n\nCustomer Question\n\n{{ $('Edit Fields').item.json.message }}",
+        "options": {
+          "systemMessage": "You are a professional FAQ Assistant.\n\nYou will receive:\n\n1. Business Knowledge\n2. Customer Question\n\nRules:\n\n- Answer ONLY using the provided Business Knowledge.\n- Never invent information.\n- Never guess.\n- If the answer is not present in the Business Knowledge:\n  - politely explain that you don't know.\n  - set requires_human=true.\n- Keep answers friendly and concise.\n- Return ONLY valid JSON.\n\nReturn:\n\n{\n  \"intent\":\"faq\",\n  \"reply\":\"\",\n  \"requires_human\":false\n}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1456,
+        -368
+      ],
+      "id": "c47015cb-a005-4de4-878a-238e49dda248",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "openai/gpt-oss-20b",
+          "mode": "list",
+          "cachedResultName": "openai/gpt-oss-20b"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1328,
+        -160
+      ],
+      "id": "b8cb331d-f7d4-47c7-99ed-304bf2f76fa3",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "PLACEHOLDER_ID",
+          "name": "PLACEHOLDER_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const aiOutput = $json.output || \"\";\n\nconst clean = aiOutput\n.replace(/```json/g,\"\")\n.replace(/```/g,\"\")\n.trim();\n\nlet parsed;\n\ntry{\n    parsed = JSON.parse(clean);\n}catch(e){\n    parsed = {\n        intent:\"faq\",\n        reply:\"Sorry, I couldn't understand your question.\",\n        requires_human:true\n    };\n}\n\nreturn [{json:parsed}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1776,
+        -352
+      ],
+      "id": "693b1993-8e5c-4210-95c0-6eb8ed02bbf1",
+      "name": "Code in JavaScript3"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"intent\": \"{{ $json.intent }}\",\n  \"reply\": \"{{ $json.reply }}\",\n  \"requires_human\": {{ $json.requires_human }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1984,
+        -352
+      ],
+      "id": "67a04a95-3dc1-466e-a3e1-aab86aa1bd53",
+      "name": "Respond to Webhook2"
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead = $input.first().json;\n\n// Normalize values\nconst customerName = (lead.customer_name || \"\").trim();\nconst phone = (lead.phone || \"\").trim();\nconst service = (lead.service || \"\").trim();\n\nconst isComplete =\n  customerName.length > 0 &&\n  phone.length > 0 &&\n  service.length > 0;\n\nreturn [\n  {\n    json: {\n      ...lead,\n      customer_name: customerName,\n      phone,\n      service,\n      isComplete\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        320
+      ],
+      "id": "aa20f129-3bf6-4558-98ae-ef0ef22705d6",
+      "name": "Code in JavaScript4"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "8de1fc49-e150-44ea-9036-095defd86d97",
+              "leftValue": "={{ $json.isComplete }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1648,
+        320
+      ],
+      "id": "d0f27fa4-e91a-4f39-beec-3407a49c0865",
+      "name": "If2"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n    \"success\": false,\n    \"reply\":\"{{ $json.reply }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1856,
+        416
+      ],
+      "id": "d6c6189e-63c1-4c7d-8a74-f59f8957fd30",
+      "name": "Respond to Webhook3"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1ZhrbI8UixPv7ESSJqpZ0O-nNi9_7qk389WU-3CWim9k",
+          "mode": "list",
+          "cachedResultName": "AI Receptionist - Appointment Booking Agent",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ZhrbI8UixPv7ESSJqpZ0O-nNi9_7qk389WU-3CWim9k/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ZhrbI8UixPv7ESSJqpZ0O-nNi9_7qk389WU-3CWim9k/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name": "={{ $json.customer_name }}",
+            "Email": "={{ $json.email }}",
+            "Phone": "={{ $json.phone }}",
+            "Service ": "={{ $json.service }}",
+            "Status": "new",
+            "Timestamp": "={{ $now }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Phone",
+              "displayName": "Phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Service ",
+              "displayName": "Service ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1856,
+        224
+      ],
+      "id": "f29a69fe-8811-42bb-8faf-6f676a28e109",
+      "name": "Append row in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "PLACEHOLDER_ID",
+          "name": "PLACEHOLDER_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.Email }}",
+        "subject": "🎉 New Lead Received",
+        "emailType": "text",
+        "message": "=A new customer has shown interest.\nName: {{ $json.Name }}\nPhone: {{ $json.Phone}}\nEmail: {{ $json.Email}}\nInterested Service: {{ $json['Service ']}} \nPlease contact them.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2064,
+        224
+      ],
+      "id": "6bdfe8ba-a0fa-4cd9-a8e2-b0eb7f0142bc",
+      "name": "Send a message1",
+      "webhookId": "34d8134c-016e-427a-a1d9-d2f706ac1912",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "PLACEHOLDER_ID",
+          "name": "PLACEHOLDER_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1ZhrbI8UixPv7ESSJqpZ0O-nNi9_7qk389WU-3CWim9k",
+          "mode": "list",
+          "cachedResultName": "AI Receptionist - Appointment Booking Agent",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ZhrbI8UixPv7ESSJqpZ0O-nNi9_7qk389WU-3CWim9k/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1481754768,
+          "mode": "list",
+          "cachedResultName": "Human Escalations",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ZhrbI8UixPv7ESSJqpZ0O-nNi9_7qk389WU-3CWim9k/edit#gid=1481754768"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Timestamp": "={{ $json.timestamp }}",
+            "Customer Name": "={{ $json.customer_name }}",
+            "Email": "={{ $json.email }}",
+            "Escalation Record": "={{ $json.escalation_reason }}",
+            "Custom Message": "={{ $json.customer_message }}",
+            "Status": "={{ $json.status }}",
+            "Phone": "={{ $json.phone }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Customer Name",
+              "displayName": "Customer Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Phone",
+              "displayName": "Phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Escalation Record",
+              "displayName": "Escalation Record",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Custom Message",
+              "displayName": "Custom Message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1504,
+        592
+      ],
+      "id": "9dcf1262-a0ea-4657-baf1-eefb5ead10e5",
+      "name": "Append row in sheet2",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "PLACEHOLDER_ID",
+          "name": "PLACEHOLDER_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.Email }}",
+        "subject": "🚨 Human Escalation Required",
+        "emailType": "text",
+        "message": "=A customer requires human assistance.\n\n--------------------------------\n\nCustomer Name:\n{{ $json[\"Customer Name\"] }}\n\nEmail:\n{{ $json.Email }}\n\nPhone:\n{{ $json.Phone }}\n\nEscalation Reason:\n{{ $json[\"Escalation Record\"] }}\n\n\nCustomer Message:\n{{ $json[\"Custom Message\"] }}\n\nCurrent Status:\n{{ $json.Status }}\n\n--------------------------------\n\nPlease contact the customer as soon as possible.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1712,
+        592
+      ],
+      "id": "e582f48e-9379-464b-af5e-d782183d7a67",
+      "name": "Send a message2",
+      "webhookId": "b22d0f21-0af7-41e6-a144-f1d2aac07521",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "PLACEHOLDER_ID",
+          "name": "PLACEHOLDER_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"reply\": \"{{ $('Prepare Escalation').first().json.reply }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1920,
+        592
+      ],
+      "id": "12e7e491-7a98-4653-a119-e1e31db24d0f",
+      "name": "Respond to Webhook4"
+    },
+    {
+      "parameters": {
+        "jsCode": "// AI Output\nconst human = $input.first().json;\n\n// Original customer message from Edit Fields node\nconst originalMessage = $('Edit Fields').first().json.message;\n\nreturn [\n  {\n    json: {\n      timestamp: new Date().toISOString(),\n\n      customer_name: (human.customer_name || \"\").trim(),\n      email: (human.email || \"\").trim(),\n      phone: (human.phone || \"\").trim(),\n\n      escalation_reason: \"Customer Requested Human Assistance\",\n\n      customer_message: originalMessage,\n\n      status: \"Pending\",\n\n      requires_human: human.requires_human,\n\n      reply:\n        human.reply ||\n        \"Thank you for contacting us. Your request has been forwarded to one of our team members, who will contact you shortly.\"\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1296,
+        592
+      ],
+      "id": "29595c50-8088-48d1-9541-3fa9fda798c9",
+      "name": "Prepare Escalation"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code in JavaScript4",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Escalation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Get many events",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many events": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Create an event",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an event": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        []
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript3": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript4": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet1": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message1": {
+      "main": [
+        []
+      ]
+    },
+    "Append row in sheet2": {
+      "main": [
+        [
+          {
+            "node": "Send a message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message2": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Escalation": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "pinData": {},
+  "versionId": "8b6f7396-03ba-422a-a1a3-e1ee753daa0e",
+  "activeVersionId": "8b6f7396-03ba-422a-a1a3-e1ee753daa0e",
+  "versionCounter": 369,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-07-16T07:09:25.386Z",
+      "createdAt": "2026-07-16T07:09:25.386Z",
+      "role": "workflow:owner",
+      "workflowId": "S1toQj3vtjnETebv",
+      "projectId": "loWf0mBs1xKuh5N3",
+      "project": {
+        "updatedAt": "2026-06-04T07:55:05.260Z",
+        "createdAt": "2026-06-04T07:52:41.897Z",
+        "id": "loWf0mBs1xKuh5N3",
+        "name": "Chandu M <chandouqiande@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "8d994dc9-eaab-443f-93bf-ef4aa823f36d"
+      }
+    }
+  ],
+  "tags": [
+    {
+      "updatedAt": "2026-07-26T11:48:51.308Z",
+      "createdAt": "2026-07-26T11:48:51.308Z",
+      "id": "7DRpobZTl8ILQIoc",
+      "name": "AI Receptionist"
+    },
+    {
+      "updatedAt": "2026-06-09T06:33:15.749Z",
+      "createdAt": "2026-06-09T06:33:15.749Z",
+      "id": "OqenQjr9s45g7AEO",
+      "name": "ai"
+    },
+    {
+      "updatedAt": "2026-06-09T06:33:45.548Z",
+      "createdAt": "2026-06-09T06:33:45.548Z",
+      "id": "SSAFLny1wplVixFm",
+      "name": "ai agent"
+    },
+    {
+      "updatedAt": "2026-06-19T18:47:33.921Z",
+      "createdAt": "2026-06-19T18:47:33.921Z",
+      "id": "adTN6XPgfo01vqx0",
+      "name": "ai automation"
+    }
+  ],
+  "parentFolder": null,
+  "activeVersion": {
+    "updatedAt": "2026-07-26T11:47:45.000Z",
+    "createdAt": "2026-07-26T11:42:25.600Z",
+    "versionId": "8b6f7396-03ba-422a-a1a3-e1ee753daa0e",
+    "workflowId": "S1toQj3vtjnETebv",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "ai-receptionist",
+          "responseMode": "responseNode",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          0,
+          0
+        ],
+        "id": "ef0a9e4e-e114-4b10-a389-6152ebb862b5",
+        "name": "Webhook",
+        "webhookId": "247d7835-f21b-4948-8425-a6e92a465ea3"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "e9bdddb9-6371-4dab-a342-a22a5cce8013",
+                "name": "sessionId",
+                "value": "={{ $json.body.sessionId }}",
+                "type": "string"
+              },
+              {
+                "id": "95ef39a6-4a05-438d-a3a6-d9f7552f4d32",
+                "name": "currentTime",
+                "value": "={{ $now }}",
+                "type": "string"
+              },
+              {
+                "id": "51b98940-5453-4259-b5a0-d07eefd9387c",
+                "name": "customer.name",
+                "value": "={{ $json.body.customer.name }}",
+                "type": "string"
+              },
+              {
+                "id": "5d6b6181-c203-4052-99cf-04320f614e52",
+                "name": "customer.email",
+                "value": "={{ $json.body.customer.email }}",
+                "type": "string"
+              },
+              {
+                "id": "21e75003-de2d-403d-bc1f-727d63880b6d",
+                "name": "customer.phone",
+                "value": "={{ $json.body.customer.phone }}",
+                "type": "string"
+              },
+              {
+                "id": "3e0182f0-8cf4-47c9-83da-b2c000a1159e",
+                "name": "appointment.service",
+                "value": "={{ $json.body.appointment.service }}",
+                "type": "string"
+              },
+              {
+                "id": "d7997196-cf5c-4780-ae24-625239255f21",
+                "name": "appointment.date",
+                "value": "={{ $json.body.appointment.date }}",
+                "type": "string"
+              },
+              {
+                "id": "945a97d4-35b5-4d42-af2c-0fd08d62ed4d",
+                "name": "appointment.time",
+                "value": "={{ $json.body.appointment.time }}",
+                "type": "string"
+              },
+              {
+                "id": "7da505f0-0926-4900-83a5-a76d64eed8f2",
+                "name": "message",
+                "value": "={{ $json.body.message }}",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          208,
+          0
+        ],
+        "id": "fb8500f0-818b-4c86-bd1a-4364a65cba94",
+        "name": "Edit Fields"
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "=Current Date & Time\n{{ $json.currentTime }}\n\nCustomer Information\n\nCustomer Name: {{ $json.customer.name }}\nCustomer Email: {{ $json.customer.email }}\nCustomer Phone: {{ $json.customer.phone }}\n\nCurrent Appointment Information\n\nCurrent Service: {{ $json.appointment.service }}\nCurrent Appointment Date: {{ $json.appointment.date }}\nCurrent Appointment Time: {{ $json.appointment.time }}\n\nLatest Customer Message\n\n{{ $json.message }}",
+          "options": {
+            "systemMessage": "You are a professional AI Receptionist for a business.\n\nYour responsibilities are:\n\n- Understand the customer's request.\n- Determine the customer's intent.\n- Answer business-related questions.\n- Collect and qualify potential leads.\n- Help customers book appointments.\n- Escalate to a human when necessary.\n- Never invent business information.\n- Keep responses friendly, concise and professional.\n\nYou will receive four inputs:\n\n1. Current Date & Time\n2. Customer Information\n3. Current Appointment Information\n4. Customer Message\n\n==================================================\nSOURCE OF TRUTH\n==================================================\n\nThe structured Customer Information and Current Appointment Information are the source of truth.\n\nAlways use these values before analyzing the customer's message.\n\nThe customer's message should only be used to:\n\n- determine intent\n- update existing appointment details\n- fill missing appointment fields\n- identify lead information\n\nNever ignore valid structured information.\n\nIf customer information already exists, never ask for it again.\n\n==================================================\nINTENTS\n==================================================\n\nIntent must ALWAYS be exactly one of:\n\n- appointment\n- faq\n- lead\n- human\n\n==================================================\nINTENT CLASSIFICATION RULES\n==================================================\n\n-------------------------\nAppointment\n-------------------------\n\nChoose \"appointment\" ONLY if the customer clearly wants to:\n\n- book an appointment\n- schedule an appointment\n- reserve a slot\n- confirm an appointment\n- reschedule an appointment\n- cancel an appointment\n\nExamples:\n\n- I want to book a haircut.\n- Schedule Hair Spa tomorrow.\n- Reserve a slot for Friday.\n- Book me at 3 PM.\n- Can I book an appointment?\n- Change my appointment.\n- Cancel my booking.\n\nIMPORTANT:\n\nMentioning a service alone DOES NOT mean an appointment.\n\nExamples that are NOT appointments:\n\n- I'm interested in Hair Spa.\n- Tell me about Hair Spa.\n- I want pricing.\n- Can someone contact me?\n\nThese are LEADS.\n\n-------------------------\nLead\n-------------------------\n\nChoose \"lead\" whenever the customer shows business interest but is NOT booking yet.\n\nExamples:\n\n- I'm interested in Hair Spa.\n- Can someone contact me?\n- Please call me.\n- I'd like more information.\n- Tell me about your packages.\n- I'd like a quotation.\n- What is the cost?\n- I want to become a customer.\n- I'm interested in your services.\n\nA lead becomes complete when:\n\n- customer_name exists\n- phone exists\n- service exists\n\nIf service is missing,\n\nask ONLY:\n\n\"Which service are you interested in?\"\n\nNever ask again for:\n\n- customer name\n- email\n- phone\n\nif they already exist.\n\n-------------------------\nFAQ\n-------------------------\n\nChoose \"faq\" only if the customer is asking for business information.\n\nExamples:\n\n- Working hours\n- Address\n- Services offered\n- Parking\n- Pricing\n- Policies\n\nAnswer ONLY using the provided business knowledge.\n\nNever invent answers.\n\nIf you cannot confidently answer,\n\nset:\n\nrequires_human = true\n\n-------------------------\nHuman\n-------------------------\n\nChoose \"human\" only if:\n\n- customer explicitly asks for a human\n- complaint\n- refund\n- emergency\n- abusive language\n- legal issue\n- issue cannot be handled confidently\n\n==================================================\nPRIORITY RULES\n==================================================\n\nThese rules override everything else.\n\n1.\n\nIf the customer does NOT explicitly ask to:\n\n- book\n- schedule\n- reserve\n- reschedule\n- cancel\n\nNEVER choose \"appointment\".\n\n2.\n\nInterest in a service is ALWAYS a \"lead\".\n\n3.\n\nRequesting a callback is ALWAYS a \"lead\".\n\n4.\n\nRequesting pricing is ALWAYS a \"lead\".\n\n5.\n\nRequesting packages is ALWAYS a \"lead\".\n\n6.\n\nRequesting more information is ALWAYS a \"lead\".\n\n7.\n\nOnly classify as \"appointment\" when booking intent is clearly present.\n\n==================================================\nCUSTOMER INFORMATION\n==================================================\n\nCustomer information may already contain:\n\n- customer_name\n- email\n- phone\n\nAlways copy existing values.\n\nNever remove them.\n\nNever overwrite them unless the customer explicitly provides updated information.\n\nNever ask for information that already exists.\n\n==================================================\nAPPOINTMENT INFORMATION\n==================================================\n\nAppointment information may already contain:\n\n- service\n- appointment_date\n- appointment_time\n\nAlways preserve existing values.\n\nOnly update them if the customer explicitly changes them.\n\nNever remove existing appointment information.\n\n==================================================\nMISSING APPOINTMENT INFORMATION\n==================================================\n\nFor appointment intent:\n\nCombine:\n\n- structured appointment information\n- customer message\n\nIf any required appointment field is missing,\n\nask ONLY for the missing fields.\n\nNever ask for fields that already exist.\n\nRequired appointment fields:\n\n- customer_name\n- email\n- phone\n- service\n- appointment_date\n- appointment_time\n\n==================================================\nAPPOINTMENT READY\n==================================================\n\nAn appointment is ready ONLY when:\n\nThe customer has explicitly requested to book an appointment\n\nAND\n\nall required appointment fields exist:\n\n- customer_name\n- email\n- phone\n- service\n- appointment_date\n- appointment_time\n\nWhen complete:\n\n- confirm booking readiness\n- do not ask more questions\n- allow workflow to continue\n\n==================================================\nLEAD READY\n==================================================\n\nA lead is ready when:\n\n- customer_name exists\n- phone exists\n- service exists\n\nWhen complete:\n\nThank the customer and confirm that someone from the team will contact them shortly.\n\n==================================================\nRESPONSE RULES\n==================================================\n\nAlways be:\n\n- polite\n- professional\n- concise\n\nNever provide explanations outside the JSON.\n\nNever include markdown.\n\nNever include code blocks.\n\nReturn ONLY valid JSON.\n\n==================================================\nOUTPUT SCHEMA\n==================================================\n\n{\n  \"intent\": \"\",\n  \"reply\": \"\",\n  \"customer_name\": \"\",\n  \"email\": \"\",\n  \"phone\": \"\",\n  \"appointment_date\": \"\",\n  \"appointment_time\": \"\",\n  \"service\": \"\",\n  \"requires_human\": false\n}",
+            "maxIterations": 10
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 3.1,
+        "position": [
+          416,
+          0
+        ],
+        "id": "e4bc0dc7-386f-49ff-909b-e39c84ef2aae",
+        "name": "AI Agent"
+      },
+      {
+        "parameters": {
+          "model": {
+            "__rl": true,
+            "value": "openai/gpt-oss-20b",
+            "mode": "list",
+            "cachedResultName": "openai/gpt-oss-20b"
+          },
+          "builtInTools": {},
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+        "typeVersion": 1.3,
+        "position": [
+          368,
+          224
+        ],
+        "id": "6f926b15-1e4e-495c-a425-3d2740e8f3e5",
+        "name": "OpenAI Chat Model",
+        "credentials": {
+          "openAiApi": {
+            "id": "2VZoomsXqV6KCRcg",
+            "name": "OpenAI account 2"
+          }
+        }
+      },
+      {
+        "parameters": {},
+        "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+        "typeVersion": 1.4,
+        "position": [
+          512,
+          224
+        ],
+        "id": "be522116-f948-4f53-9838-affc992411d8",
+        "name": "Simple Memory"
+      },
+      {
+        "parameters": {
+          "jsCode": "// Get AI output\nconst aiOutput = $json.output || $json.text || $json.response;\n\n// Remove markdown if AI accidentally returns it\nconst clean = aiOutput\n  .replace(/```json/g, \"\")\n  .replace(/```/g, \"\")\n  .trim();\n\nlet parsed;\n\ntry {\n  parsed = JSON.parse(clean);\n} catch (err) {\n  parsed = {\n    intent: \"human\",\n    reply: \"I'm sorry, I couldn't understand your request. A team member will assist you shortly.\",\n    customer_name: \"\",\n    email: \"\",\n    phone: \"\",\n    appointment_date: \"\",\n    appointment_time: \"\",\n    service: \"\",\n    requires_human: true\n  };\n}\n\n// Merge original data with parsed AI output\nreturn [\n  {\n    json: {\n      ...$json,\n      ...parsed\n    }\n  }\n];"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          768,
+          0
+        ],
+        "id": "fc47ab66-214c-4363-be4d-c3a04f98f2d1",
+        "name": "Code in JavaScript"
+      },
+      {
+        "parameters": {
+          "rules": {
+            "values": [
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "loose",
+                    "version": 3
+                  },
+                  "conditions": [
+                    {
+                      "leftValue": "={{$json.intent}}",
+                      "rightValue": "faq",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals"
+                      },
+                      "id": "4f6a91f5-eaee-4ecc-a720-0e98875bc10c"
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "FAQ"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "loose",
+                    "version": 3
+                  },
+                  "conditions": [
+                    {
+                      "id": "f21b54f9-377c-4a5c-a510-1b2d2e1489d9",
+                      "leftValue": "={{$json.intent}}",
+                      "rightValue": "appointment",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals",
+                        "name": "filter.operator.equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "Appointment"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "loose",
+                    "version": 3
+                  },
+                  "conditions": [
+                    {
+                      "id": "14a85a8d-6c75-4ce9-a778-6f387caa9daf",
+                      "leftValue": "={{$json.intent}}",
+                      "rightValue": "lead",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals",
+                        "name": "filter.operator.equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "Lead"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "loose",
+                    "version": 3
+                  },
+                  "conditions": [
+                    {
+                      "id": "5b10a1a6-25c0-4e28-b1cc-d15838d72bdf",
+                      "leftValue": "={{$json.intent}}",
+                      "rightValue": "human",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals",
+                        "name": "filter.operator.equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "Human"
+              }
+            ]
+          },
+          "looseTypeValidation": true,
+          "options": {}
+        },
+        "type": "n8n-nodes-base.switch",
+        "typeVersion": 3.4,
+        "position": [
+          976,
+          0
+        ],
+        "id": "8dd01b5b-1aa2-42ab-af5e-89ae627f3c18",
+        "name": "Switch"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "ae500771-2230-4838-8767-81bd4b3f6f17",
+                "leftValue": "={{ $json.isComplete }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "looseTypeValidation": true,
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          1456,
+          16
+        ],
+        "id": "386104ab-eee0-42e3-b3fd-5d169de41d8a",
+        "name": "If"
+      },
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={\n  \"success\": false,\n  \"message\": \"{{ $json.reply }}\",\n  \"missingFields\": {{ JSON.stringify($json.missingFields) }}\n}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.5,
+        "position": [
+          1760,
+          112
+        ],
+        "id": "7f361f00-6650-47f6-b2bc-346245e0b110",
+        "name": "Respond to Webhook"
+      },
+      {
+        "parameters": {
+          "operation": "getAll",
+          "calendar": {
+            "__rl": true,
+            "value": "753e9f70c880a44624645cb7954758af820a7f186342d475b35a2f160048c84b@group.calendar.google.com",
+            "mode": "list",
+            "cachedResultName": "Agents Shinka-6c"
+          },
+          "returnAll": true,
+          "timeMin": "={{ $json.appointment_date }}T{{ $json.appointment_time }}:00",
+          "timeMax": "={{ DateTime.fromISO($json.appointment_date + \"T\" + $json.appointment_time).plus({ minutes: 30 }).toISO() }}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.googleCalendar",
+        "typeVersion": 1.3,
+        "position": [
+          1664,
+          -80
+        ],
+        "id": "18cf4c29-2353-4c22-b4d3-6556ca51daf3",
+        "name": "Get many events",
+        "alwaysOutputData": true,
+        "credentials": {
+          "googleCalendarOAuth2Api": {
+            "id": "apc2KkBp8gc1zOrS",
+            "name": "Google Calendar account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const events = $input.all();\n\nconst current = $('Code').first().json;\n\nlet isAvailable = true;\n\nif (\n  events.length > 0 &&\n  Object.keys(events[0].json).length > 0\n) {\n  isAvailable = false;\n}\n\nreturn [\n  {\n    json: {\n      ...current,\n      isAvailable,\n      eventCount: events.length\n    }\n  }\n];"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1872,
+          -80
+        ],
+        "id": "3e1a7ccc-144a-4620-bc51-577c98f4e3d1",
+        "name": "Code in JavaScript2"
+      },
+      {
+        "parameters": {
+          "jsCode": "const item = $input.first().json;\n\nconst missingFields = [];\n\nif (!item.service) {\n  missingFields.push(\"service\");\n}\n\nif (!item.appointment_date) {\n  missingFields.push(\"appointment_date\");\n}\n\nif (!item.appointment_time) {\n  missingFields.push(\"appointment_time\");\n}\n\nitem.missingFields = missingFields;\nitem.isComplete = missingFields.length === 0;\n\nreturn [{ json: item }];"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1248,
+          16
+        ],
+        "id": "d8b3b8aa-5c4c-4d00-b6a6-2513bd1c2ec1",
+        "name": "Code"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "a7496135-8605-4144-976d-171b9d513f0f",
+                "leftValue": "={{ $json.isAvailable }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          2080,
+          -80
+        ],
+        "id": "e205cf95-564a-4e6b-9892-3b20f669f368",
+        "name": "If1"
+      },
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={\n  \"success\": false,\n  \"message\": \"Sorry, this time slot is already booked. Please choose another available time.\"\n}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.5,
+        "position": [
+          2320,
+          -48
+        ],
+        "id": "0c850b0d-771d-43ac-af75-70f087e2d4a9",
+        "name": "Respond to Webhook1"
+      },
+      {
+        "parameters": {
+          "calendar": {
+            "__rl": true,
+            "value": "753e9f70c880a44624645cb7954758af820a7f186342d475b35a2f160048c84b@group.calendar.google.com",
+            "mode": "list",
+            "cachedResultName": "Agents Shinka-6c"
+          },
+          "start": "={{ $json.appointment_date }}T{{ $json.appointment_time }}:00",
+          "end": "={{ DateTime.fromISO($json.appointment_date + \"T\" + $json.appointment_time).plus({ minutes: 30 }).toISO() }}",
+          "additionalFields": {
+            "attendees": [],
+            "description": "=Customer: {{$json.customer_name}}  Phone: {{$json.phone}}  Email: {{$json.email}}  Service: {{$json.service}}",
+            "guestsCanInviteOthers": true
+          }
+        },
+        "type": "n8n-nodes-base.googleCalendar",
+        "typeVersion": 1.3,
+        "position": [
+          2400,
+          -192
+        ],
+        "id": "8ccedbb1-8a13-4bb7-a7d6-a0a869814876",
+        "name": "Create an event",
+        "credentials": {
+          "googleCalendarOAuth2Api": {
+            "id": "apc2KkBp8gc1zOrS",
+            "name": "Google Calendar account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "append",
+          "documentId": {
+            "__rl": true,
+            "value": "1vyl06_xmE4GVRjhDl4BplEwuschyR0yg_VqnrIehsV0",
+            "mode": "list",
+            "cachedResultName": "Day-15",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vyl06_xmE4GVRjhDl4BplEwuschyR0yg_VqnrIehsV0/edit?usp=drivesdk"
+          },
+          "sheetName": {
+            "__rl": true,
+            "value": "gid=0",
+            "mode": "list",
+            "cachedResultName": "Sheet1",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1vyl06_xmE4GVRjhDl4BplEwuschyR0yg_VqnrIehsV0/edit#gid=0"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "Email": "={{ $json.email }}",
+              "Phone": "={{ $json.phone }}",
+              "Service": "={{ $json.service }}",
+              "Status": "={{ $json.status }}",
+              "Date": "={{ $json.end.dateTime }}",
+              "Time": "={{ $json.end.dateTime }}",
+              "Customer": "={{ $json.customer_name }}"
+            },
+            "matchingColumns": [],
+            "schema": [
+              {
+                "id": "Customer",
+                "displayName": "Customer",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Email",
+                "displayName": "Email",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Phone",
+                "displayName": "Phone",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Service",
+                "displayName": "Service",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Date",
+                "displayName": "Date",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Time",
+                "displayName": "Time",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Status",
+                "displayName": "Status",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.googleSheets",
+        "typeVersion": 4.7,
+        "position": [
+          2640,
+          -192
+        ],
+        "id": "091b6a0d-7847-4368-8318-8afefa4d3b3a",
+        "name": "Append row in sheet",
+        "credentials": {
+          "googleSheetsOAuth2Api": {
+            "id": "XUo0YZXw282TEr36",
+            "name": "Google Sheets account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "mode": "combine",
+          "combineBy": "combineByPosition",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.merge",
+        "typeVersion": 3.2,
+        "position": [
+          2480,
+          -352
+        ],
+        "id": "f94dac57-8a18-4aa7-b273-53019361adee",
+        "name": "Merge"
+      },
+      {
+        "parameters": {
+          "sendTo": "={{ $json.Email }}",
+          "subject": "Appointment Confirmation",
+          "message": "=<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"UTF-8\">\n</head>\n<body style=\"font-family: Arial, Helvetica, sans-serif; background:#f5f5f5; margin:0; padding:20px;\">\n\n<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\">\n<tr>\n<td align=\"center\">\n\n<table width=\"600\" cellpadding=\"0\" cellspacing=\"0\" style=\"background:#ffffff; border-radius:10px; padding:30px;\">\n\n<tr>\n<td align=\"center\">\n<h2 style=\"color:#2563eb; margin-bottom:5px;\">\n🎉 Appointment Confirmed\n</h2>\n\n<p style=\"color:#555;\">\nHello <strong>{{ $json.Customer }}</strong>,\n</p>\n\n<p style=\"color:#555;\">\nThank you for choosing our services. Your appointment has been successfully confirmed.\n</p>\n\n<hr>\n\n<h3 style=\"color:#111;\">📅 Appointment Details</h3>\n\n<table cellpadding=\"8\">\n\n<tr>\n<td><strong>Service</strong></td>\n<td>{{ $json.Service }}</td>\n</tr>\n<tr>\n<td><strong>Date</strong></td>\n<td>{{ $json.FormattedDate }}</td>\n</tr>\n\n<tr>\n<td><strong>Time</strong></td>\n<td>{{ $json.FormattedTime }}</td>\n</tr>\n<tr>\n<td><strong>Status</strong></td>\n<td style=\"color:green;\">\n{{ $json.Status }}\n</td>\n</tr>\n\n</table>\n\n<hr>\n\n<p style=\"color:#555;\">\nIf you need to reschedule or cancel your appointment, simply reply to this email or contact us before your scheduled appointment.\n</p>\n\n<p style=\"margin-top:30px;\">\nWe look forward to serving you!\n</p>\n\n<br>\n\n<p>\nRegards,<br>\n<b>AI Receptionist Team</b>\n</p>\n\n</td>\n\n</tr>\n\n</table>\n\n</td>\n\n</tr>\n\n</table>\n\n</body>\n</html>",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.2,
+        "position": [
+          3024,
+          -128
+        ],
+        "id": "4813bcbf-6199-40f0-ab25-84119435b1b6",
+        "name": "Send a message",
+        "webhookId": "c47cb75e-6434-49ce-9bff-d6f0a6862979",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "dJo19xe1bVod4Y6k",
+            "name": "Gmail account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const item = $input.first().json;\n\n// Use the Time field (ISO string)\nconst dateObj = new Date(item.Time);\n\n// Format Date\nconst formattedDate = new Intl.DateTimeFormat('en-IN', {\n  weekday: 'long',\n  day: 'numeric',\n  month: 'long',\n  year: 'numeric',\n  timeZone: 'Asia/Kolkata'\n}).format(dateObj);\n\n// Format Time\nconst formattedTime = new Intl.DateTimeFormat('en-IN', {\n  hour: 'numeric',\n  minute: '2-digit',\n  hour12: true,\n  timeZone: 'Asia/Kolkata'\n}).format(dateObj);\n\nreturn [{\n  json: {\n    ...item,\n    FormattedDate: formattedDate,\n    FormattedTime: formattedTime\n  }\n}];"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2832,
+          -128
+        ],
+        "id": "fd78ab10-35fa-4756-8362-72d89a4642a7",
+        "name": "Code in JavaScript1"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "bfa8ecb1-1f6b-4780-bdc8-4a1f0448e91d",
+                "name": "businessKnowledge",
+                "value": "=Business Name: Shinka Salon  Business Description: A modern salon providing professional grooming services.  Working Hours: Monday to Saturday: 9:00 AM – 7:00 PM Sunday: Closed  Services: - Haircut - Hair Spa - Hair Coloring - Beard Trim - Facial  Pricing: Haircut - ₹300 Hair Spa - ₹800 Hair Coloring - Starting from ₹1500 Beard Trim - ₹200 Facial - ₹1000  Location: MG Road, Bengaluru  Phone: +91 9876543210  Email: contact@shinkasalon.com  Booking Policy: Appointments are recommended.  Cancellation Policy: Please cancel at least 2 hours before your appointment.  Payment Methods: Cash UPI Credit Card Debit Card",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          1248,
+          -368
+        ],
+        "id": "f64b27fb-28fc-47ec-88b5-6e3546a59e36",
+        "name": "Edit Fields1"
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "=Business Knowledge\n{{ $json.businessKnowledge }}\n\nCustomer Question\n\n{{ $('Edit Fields').item.json.message }}",
+          "options": {
+            "systemMessage": "You are a professional FAQ Assistant.\n\nYou will receive:\n\n1. Business Knowledge\n2. Customer Question\n\nRules:\n\n- Answer ONLY using the provided Business Knowledge.\n- Never invent information.\n- Never guess.\n- If the answer is not present in the Business Knowledge:\n  - politely explain that you don't know.\n  - set requires_human=true.\n- Keep answers friendly and concise.\n- Return ONLY valid JSON.\n\nReturn:\n\n{\n  \"intent\":\"faq\",\n  \"reply\":\"\",\n  \"requires_human\":false\n}"
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 3.1,
+        "position": [
+          1456,
+          -368
+        ],
+        "id": "c47015cb-a005-4de4-878a-238e49dda248",
+        "name": "AI Agent1"
+      },
+      {
+        "parameters": {
+          "model": {
+            "__rl": true,
+            "value": "openai/gpt-oss-20b",
+            "mode": "list",
+            "cachedResultName": "openai/gpt-oss-20b"
+          },
+          "builtInTools": {},
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+        "typeVersion": 1.3,
+        "position": [
+          1328,
+          -160
+        ],
+        "id": "b8cb331d-f7d4-47c7-99ed-304bf2f76fa3",
+        "name": "OpenAI Chat Model1",
+        "credentials": {
+          "openAiApi": {
+            "id": "ElpSuTJcjmLFzmqr",
+            "name": "OpenAI account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const aiOutput = $json.output || \"\";\n\nconst clean = aiOutput\n.replace(/```json/g,\"\")\n.replace(/```/g,\"\")\n.trim();\n\nlet parsed;\n\ntry{\n    parsed = JSON.parse(clean);\n}catch(e){\n    parsed = {\n        intent:\"faq\",\n        reply:\"Sorry, I couldn't understand your question.\",\n        requires_human:true\n    };\n}\n\nreturn [{json:parsed}];"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1776,
+          -352
+        ],
+        "id": "693b1993-8e5c-4210-95c0-6eb8ed02bbf1",
+        "name": "Code in JavaScript3"
+      },
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={\n  \"success\": true,\n  \"intent\": \"{{ $json.intent }}\",\n  \"reply\": \"{{ $json.reply }}\",\n  \"requires_human\": {{ $json.requires_human }}\n}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.5,
+        "position": [
+          1984,
+          -352
+        ],
+        "id": "67a04a95-3dc1-466e-a3e1-aab86aa1bd53",
+        "name": "Respond to Webhook2"
+      },
+      {
+        "parameters": {
+          "jsCode": "const lead = $input.first().json;\n\n// Normalize values\nconst customerName = (lead.customer_name || \"\").trim();\nconst phone = (lead.phone || \"\").trim();\nconst service = (lead.service || \"\").trim();\n\nconst isComplete =\n  customerName.length > 0 &&\n  phone.length > 0 &&\n  service.length > 0;\n\nreturn [\n  {\n    json: {\n      ...lead,\n      customer_name: customerName,\n      phone,\n      service,\n      isComplete\n    }\n  }\n];"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1440,
+          320
+        ],
+        "id": "aa20f129-3bf6-4558-98ae-ef0ef22705d6",
+        "name": "Code in JavaScript4"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "loose",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "8de1fc49-e150-44ea-9036-095defd86d97",
+                "leftValue": "={{ $json.isComplete }}",
+                "rightValue": true,
+                "operator": {
+                  "type": "boolean",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "looseTypeValidation": true,
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          1648,
+          320
+        ],
+        "id": "d0f27fa4-e91a-4f39-beec-3407a49c0865",
+        "name": "If2"
+      },
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={\n    \"success\": false,\n    \"reply\":\"{{ $json.reply }}\"\n}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.5,
+        "position": [
+          1856,
+          416
+        ],
+        "id": "d6c6189e-63c1-4c7d-8a74-f59f8957fd30",
+        "name": "Respond to Webhook3"
+      },
+      {
+        "parameters": {
+          "operation": "append",
+          "documentId": {
+            "__rl": true,
+            "value": "1ZhrbI8UixPv7ESSJqpZ0O-nNi9_7qk389WU-3CWim9k",
+            "mode": "list",
+            "cachedResultName": "AI Receptionist - Appointment Booking Agent",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ZhrbI8UixPv7ESSJqpZ0O-nNi9_7qk389WU-3CWim9k/edit?usp=drivesdk"
+          },
+          "sheetName": {
+            "__rl": true,
+            "value": "gid=0",
+            "mode": "list",
+            "cachedResultName": "Sheet1",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ZhrbI8UixPv7ESSJqpZ0O-nNi9_7qk389WU-3CWim9k/edit#gid=0"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "Name": "={{ $json.customer_name }}",
+              "Email": "={{ $json.email }}",
+              "Phone": "={{ $json.phone }}",
+              "Service ": "={{ $json.service }}",
+              "Status": "new",
+              "Timestamp": "={{ $now }}"
+            },
+            "matchingColumns": [],
+            "schema": [
+              {
+                "id": "Name",
+                "displayName": "Name",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Email",
+                "displayName": "Email",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Phone",
+                "displayName": "Phone",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Service ",
+                "displayName": "Service ",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Status",
+                "displayName": "Status",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Timestamp",
+                "displayName": "Timestamp",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.googleSheets",
+        "typeVersion": 4.7,
+        "position": [
+          1856,
+          224
+        ],
+        "id": "f29a69fe-8811-42bb-8faf-6f676a28e109",
+        "name": "Append row in sheet1",
+        "credentials": {
+          "googleSheetsOAuth2Api": {
+            "id": "XUo0YZXw282TEr36",
+            "name": "Google Sheets account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "sendTo": "={{ $json.Email }}",
+          "subject": "🎉 New Lead Received",
+          "emailType": "text",
+          "message": "=A new customer has shown interest.\nName: {{ $json.Name }}\nPhone: {{ $json.Phone}}\nEmail: {{ $json.Email}}\nInterested Service: {{ $json['Service ']}} \nPlease contact them.",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.2,
+        "position": [
+          2064,
+          224
+        ],
+        "id": "6bdfe8ba-a0fa-4cd9-a8e2-b0eb7f0142bc",
+        "name": "Send a message1",
+        "webhookId": "34d8134c-016e-427a-a1d9-d2f706ac1912",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "dJo19xe1bVod4Y6k",
+            "name": "Gmail account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "append",
+          "documentId": {
+            "__rl": true,
+            "value": "1ZhrbI8UixPv7ESSJqpZ0O-nNi9_7qk389WU-3CWim9k",
+            "mode": "list",
+            "cachedResultName": "AI Receptionist - Appointment Booking Agent",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ZhrbI8UixPv7ESSJqpZ0O-nNi9_7qk389WU-3CWim9k/edit?usp=drivesdk"
+          },
+          "sheetName": {
+            "__rl": true,
+            "value": 1481754768,
+            "mode": "list",
+            "cachedResultName": "Human Escalations",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ZhrbI8UixPv7ESSJqpZ0O-nNi9_7qk389WU-3CWim9k/edit#gid=1481754768"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "Timestamp": "={{ $json.timestamp }}",
+              "Customer Name": "={{ $json.customer_name }}",
+              "Email": "={{ $json.email }}",
+              "Escalation Record": "={{ $json.escalation_reason }}",
+              "Custom Message": "={{ $json.customer_message }}",
+              "Status": "={{ $json.status }}",
+              "Phone": "={{ $json.phone }}"
+            },
+            "matchingColumns": [],
+            "schema": [
+              {
+                "id": "Timestamp",
+                "displayName": "Timestamp",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "Customer Name",
+                "displayName": "Customer Name",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "Email",
+                "displayName": "Email",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "Phone",
+                "displayName": "Phone",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Escalation Record",
+                "displayName": "Escalation Record",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "Custom Message",
+                "displayName": "Custom Message",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "Status",
+                "displayName": "Status",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.googleSheets",
+        "typeVersion": 4.7,
+        "position": [
+          1504,
+          592
+        ],
+        "id": "9dcf1262-a0ea-4657-baf1-eefb5ead10e5",
+        "name": "Append row in sheet2",
+        "credentials": {
+          "googleSheetsOAuth2Api": {
+            "id": "XUo0YZXw282TEr36",
+            "name": "Google Sheets account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "sendTo": "={{ $json.Email }}",
+          "subject": "🚨 Human Escalation Required",
+          "emailType": "text",
+          "message": "=A customer requires human assistance.\n\n--------------------------------\n\nCustomer Name:\n{{ $json[\"Customer Name\"] }}\n\nEmail:\n{{ $json.Email }}\n\nPhone:\n{{ $json.Phone }}\n\nEscalation Reason:\n{{ $json[\"Escalation Record\"] }}\n\n\nCustomer Message:\n{{ $json[\"Custom Message\"] }}\n\nCurrent Status:\n{{ $json.Status }}\n\n--------------------------------\n\nPlease contact the customer as soon as possible.",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.2,
+        "position": [
+          1712,
+          592
+        ],
+        "id": "e582f48e-9379-464b-af5e-d782183d7a67",
+        "name": "Send a message2",
+        "webhookId": "b22d0f21-0af7-41e6-a144-f1d2aac07521",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "dJo19xe1bVod4Y6k",
+            "name": "Gmail account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={\n  \"success\": true,\n  \"reply\": \"{{ $('Prepare Escalation').first().json.reply }}\"\n}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.5,
+        "position": [
+          1920,
+          592
+        ],
+        "id": "12e7e491-7a98-4653-a119-e1e31db24d0f",
+        "name": "Respond to Webhook4"
+      },
+      {
+        "parameters": {
+          "jsCode": "// AI Output\nconst human = $input.first().json;\n\n// Original customer message from Edit Fields node\nconst originalMessage = $('Edit Fields').first().json.message;\n\nreturn [\n  {\n    json: {\n      timestamp: new Date().toISOString(),\n\n      customer_name: (human.customer_name || \"\").trim(),\n      email: (human.email || \"\").trim(),\n      phone: (human.phone || \"\").trim(),\n\n      escalation_reason: \"Customer Requested Human Assistance\",\n\n      customer_message: originalMessage,\n\n      status: \"Pending\",\n\n      requires_human: human.requires_human,\n\n      reply:\n        human.reply ||\n        \"Thank you for contacting us. Your request has been forwarded to one of our team members, who will contact you shortly.\"\n    }\n  }\n];"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1296,
+          592
+        ],
+        "id": "29595c50-8088-48d1-9541-3fa9fda798c9",
+        "name": "Prepare Escalation"
+      }
+    ],
+    "connections": {
+      "Webhook": {
+        "main": [
+          [
+            {
+              "node": "Edit Fields",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Edit Fields": {
+        "main": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "OpenAI Chat Model": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Simple Memory": {
+        "ai_memory": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "ai_memory",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "AI Agent": {
+        "main": [
+          [
+            {
+              "node": "Code in JavaScript",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Code in JavaScript": {
+        "main": [
+          [
+            {
+              "node": "Switch",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Switch": {
+        "main": [
+          [
+            {
+              "node": "Edit Fields1",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Code",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Code in JavaScript4",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Prepare Escalation",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "If": {
+        "main": [
+          [
+            {
+              "node": "Get many events",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Respond to Webhook",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get many events": {
+        "main": [
+          [
+            {
+              "node": "Code in JavaScript2",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Code": {
+        "main": [
+          [
+            {
+              "node": "If",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Code in JavaScript2": {
+        "main": [
+          [
+            {
+              "node": "If1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "If1": {
+        "main": [
+          [
+            {
+              "node": "Create an event",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Merge",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Respond to Webhook1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Create an event": {
+        "main": [
+          [
+            {
+              "node": "Merge",
+              "type": "main",
+              "index": 1
+            }
+          ]
+        ]
+      },
+      "Append row in sheet": {
+        "main": [
+          [
+            {
+              "node": "Code in JavaScript1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Merge": {
+        "main": [
+          [
+            {
+              "node": "Append row in sheet",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Code in JavaScript1": {
+        "main": [
+          [
+            {
+              "node": "Send a message",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Send a message": {
+        "main": [
+          []
+        ]
+      },
+      "Edit Fields1": {
+        "main": [
+          [
+            {
+              "node": "AI Agent1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "OpenAI Chat Model1": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "AI Agent1",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "AI Agent1": {
+        "main": [
+          [
+            {
+              "node": "Code in JavaScript3",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Code in JavaScript3": {
+        "main": [
+          [
+            {
+              "node": "Respond to Webhook2",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Code in JavaScript4": {
+        "main": [
+          [
+            {
+              "node": "If2",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "If2": {
+        "main": [
+          [
+            {
+              "node": "Append row in sheet1",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Respond to Webhook3",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Append row in sheet1": {
+        "main": [
+          [
+            {
+              "node": "Send a message1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Send a message1": {
+        "main": [
+          []
+        ]
+      },
+      "Append row in sheet2": {
+        "main": [
+          [
+            {
+              "node": "Send a message2",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Send a message2": {
+        "main": [
+          [
+            {
+              "node": "Respond to Webhook4",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prepare Escalation": {
+        "main": [
+          [
+            {
+              "node": "Append row in sheet2",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Chandu M",
+    "name": "AI Receptionist - Appointment Booking Agent",
+    "description": "Added all phases of service of agent ",
+    "autosaved": true,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-07-26T11:47:45.425Z",
+        "id": 87,
+        "workflowId": "S1toQj3vtjnETebv",
+        "versionId": "8b6f7396-03ba-422a-a1a3-e1ee753daa0e",
+        "event": "activated",
+        "userId": "8d994dc9-eaab-443f-93bf-ef4aa823f36d"
+      }
+    ]
+  },
+  "scopes": [
+    "execution:reveal",
+    "workflow:create",
+    "workflow:delete",
+    "workflow:disableRedaction",
+    "workflow:enableRedaction",
+    "workflow:execute",
+    "workflow:execute-chat",
+    "workflow:export",
+    "workflow:list",
+    "workflow:move",
+    "workflow:publish",
+    "workflow:read",
+    "workflow:share",
+    "workflow:unpublish",
+    "workflow:unshare",
+    "workflow:update"
+  ],
+  "checksum": "3d2f7f35e9c102d2be58f84b8f3e195e4cb005a339b6fc81cef16cdb7e7e837a"
+}
