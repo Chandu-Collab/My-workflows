@@ -19,6 +19,21 @@
 
 ## 🔥 Workflows
 
+### 🗓️ AI Receptionist Automation Series (NEW 🔥)
+
+An intelligent AI receptionist that handles customer inquiries, identifies intents (FAQ, Lead, Appointment, Human escalation), checks Google Calendar for availability, books appointments, and sends email confirmations.
+
+✨ **Features:**
+- 🤖 AI intent detection (FAQ, Lead, Appointment, Human escalation)
+- 📅 Google Calendar integration for real-time slot checking and event creation
+- 📊 Lead and appointment tracking in Google Sheets
+- 📧 Automated booking confirmation emails via Gmail
+- 🧠 Conversational memory and dynamic prompt handling
+
+📁 **Folder:** [AI Receptionist Automation Series](./workflows/AI%20Receptionist%20Automation%20Series/)
+
+---
+
 ### 📧 AI Cold Email Personalization Engine
 
 Automates personalized B2B outreach by researching a company's website, analyzing its business using AI, and generating a tailored outreach email.
@@ -167,7 +182,7 @@ Automatically researches any topic across the web, analyzes multiple articles us
 
 ---
 
-### 🕵️‍♂️ AI Competitor Intelligence Monitor (NEW 🔥)
+### 🕵️‍♂️ AI Competitor Intelligence Monitor
 
 Automatically monitor competitor websites, detect business changes, and receive instant email alerts.
 
@@ -207,6 +222,7 @@ Automatically monitor competitor websites, detect business changes, and receive 
 
 ```bash
 ai-automation-workflows/
+├── workflows/AI Receptionist Automation Series/
 ├── workflows/AI Cold Email Personalization Engine/
 ├── workflows/AI Meeting Notes → Action Items Generator/
 ├── workflows/AI Instagram DM → Lead Capture & Qualification System (n8n)/
