@@ -19,7 +19,22 @@
 
 ## 🔥 Workflows
 
-### 🗓️ AI Receptionist Automation Series (NEW 🔥)
+### 🤖 AI Lead Management & Sales Automation Series (NEW 🔥)
+
+An end-to-end AI-powered lead management and sales automation workflow built with n8n, AI agents, Google Sheets, Gmail, JavaScript, and Webhooks.
+
+✨ **Features:**
+- 📥 Lead capture and automated initial responses
+- 🧠 AI-powered intent detection and lead qualification
+- 📊 AI-driven sales intelligence and lead scoring
+- 💼 CRM automation with conditional routing and Google Sheets integration
+- 📧 Dynamic, personalized customer communication and internal sales alerts
+
+📁 **Folder:** [ai-lead-management-automation](./workflows/ai-lead-management-automation/)
+
+---
+
+### 🗓️ AI Receptionist Automation Series
 
 An intelligent AI receptionist that handles customer inquiries, identifies intents (FAQ, Lead, Appointment, Human escalation), checks Google Calendar for availability, books appointments, and sends email confirmations.
 
@@ -222,6 +237,7 @@ Automatically monitor competitor websites, detect business changes, and receive 
 
 ```bash
 ai-automation-workflows/
+├── workflows/ai-lead-management-automation/
 ├── workflows/AI Receptionist Automation Series/
 ├── workflows/AI Cold Email Personalization Engine/
 ├── workflows/AI Meeting Notes → Action Items Generator/

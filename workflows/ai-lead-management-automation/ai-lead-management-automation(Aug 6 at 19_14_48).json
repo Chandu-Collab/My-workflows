@@ -1,0 +1,2503 @@
+{
+  "updatedAt": "2026-08-08T03:38:38.929Z",
+  "createdAt": "2026-06-05T08:30:28.741Z",
+  "id": "QJuF5L7xYAo60fXx",
+  "name": "ai-lead-management-automation",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead-capture",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -240,
+        16
+      ],
+      "id": "ccbbd005-ce0c-44ed-8ab9-7d5a57dbfc1c",
+      "name": "Webhook",
+      "webhookId": "93be7426-fc23-4626-807d-d5d9011cd457"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fb0cc939-85dd-47e9-ad62-ba8d71482fb6",
+              "name": "name",
+              "value": "={{ $json.body.name }}",
+              "type": "string"
+            },
+            {
+              "id": "cffe2945-5d3f-4ae0-b19c-45ebbcae810d",
+              "name": "email",
+              "value": "={{ $json.body.email }}",
+              "type": "string"
+            },
+            {
+              "id": "addc2f37-e318-4bdc-93e1-3d518a5427e5",
+              "name": "message",
+              "value": "={{ $json.body.message }}",
+              "type": "string"
+            },
+            {
+              "id": "d7a75025-cfc8-4d81-9dcc-db8d55488ff5",
+              "name": "created_at",
+              "value": "={{$now}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -48,
+        32
+      ],
+      "id": "a0ed9597-8d34-4e18-83c0-696dd18ce951",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "return {\n  id: Date.now(),\n  name: $json.name,\n  email: $json.email,\n  message: $json.message,\n  created_at: $json.created_at\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        128,
+        32
+      ],
+      "id": "41e2e96e-ad50-4fde-8e52-54b53ece1369",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.email_body }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2368,
+        160
+      ],
+      "id": "a9d6df2a-1ad1-4a98-83e0-51c3dede151e",
+      "name": "Send a message",
+      "webhookId": "a2d1ebb2-002d-48e9-9439-ef40bac9a903",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "dJo19xe1bVod4Y6k",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID_HERE",
+          "mode": "list",
+          "cachedResultName": "Day-1 N8n",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID_HERE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID_HERE/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        336,
+        48
+      ],
+      "id": "72948474-ee24-4e5d-b198-61547903abcc",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "XUo0YZXw282TEr36",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyze the following lead.\n\nName:\n{{$json.name}}\n\nEmail:\n{{$json.email}}\n\nCustomer Message:\n{{$json.message}}\n\nReturn the lead qualification details.",
+        "options": {
+          "systemMessage": "You are an AI Lead Qualification Assistant for a business.\n\nYour role is to analyze incoming customer enquiries and convert them into structured business information that helps sales or support teams understand the lead before responding.\n\nAnalyze the customer's message carefully and return a structured qualification report.\n\n=========================\nFIELDS TO GENERATE\n=========================\n\n1. lead_summary\nWrite a concise 1-2 sentence business summary.\nDo NOT simply repeat the customer's message.\nSummarize what the customer is trying to achieve and what assistance they need.\n\nGood Example:\n\"The customer is looking for professional career guidance and consultation regarding future career opportunities.\"\n\nBad Example:\n\"Customer needs career suggestions.\"\n\n------------------------------------------------\n\n2. intent\n\nChoose the single most appropriate value:\n\n- Career Consultation\n- Product Inquiry\n- Service Inquiry\n- Pricing Inquiry\n- Technical Support\n- Project Request\n- Partnership\n- General Question\n- Other\n\n------------------------------------------------\n\n3. category\n\nChoose one:\n\n- Consultation\n- Automation\n- Development\n- Support\n- Sales\n- Education\n- Marketing\n- Other\n\n------------------------------------------------\n\n4. pain_point\n\nIdentify the customer's primary business problem or need.\n\nExamples:\n\n- Needs career guidance\n- Manual business processes\n- Requires workflow automation\n- Looking for pricing information\n- Needs technical assistance\n\nIf the problem cannot be identified, return:\n\nUnknown\n\n------------------------------------------------\n\n5. Urgency Guidelines\n\nHigh\n- ASAP\n- Immediately\n- Urgent\n- Today\n- Emergency\n- Time-sensitive requests\n\nMedium\n- Customer is actively requesting help\n- Wants consultation\n- Needs assistance\n- Wants to discuss a service\n- Requests guidance or recommendations\n\nLow\n- Just exploring options\n- General information request\n- Browsing services\n- Curious about offerings\n\nUnknown\n- Insufficient information\n------------------------------------------------\n\n6. sentiment\n\nChoose only one:\n\nPositive\nNeutral\nNegative\n\nGuidelines:\n\nPositive\n- polite requests\n- interested customers\n- appreciation\n- friendly enquiries\n\nNeutral\n- factual statements\n- information requests without emotion\n\nNegative\n- complaints\n- frustration\n- dissatisfaction\n- anger\n\nDo NOT classify polite requests for help as Negative.\nMost consultation requests should be Positive.\n\n------------------------------------------------\n\n7. confidence\n\nReturn an integer between 0 and 100 indicating your confidence in the analysis.\n\nUse:\n\n95-100\nVery clear enquiry\n\n80-94\nReasonably clear\n\n60-79\nSome ambiguity\n\nBelow 60\nVery little information\n\n------------------------------------------------\n\n8. qualification_status\n\nChoose only one:\n\nQualified\nNeeds More Information\nUnqualified\n\nQualified\nCustomer has a clear need or enquiry.\n\nNeeds More Information\nCustomer's intent exists but more details are required.\n\nUnqualified\nSpam, irrelevant, or meaningless message.\n\n------------------------------------------------\n\n9. next_action\n\nChoose the best recommendation:\n\nSchedule Consultation\nSchedule Demo\nSend Pricing\nAssign Support Team\nRequest More Information\nSend Documentation\nFollow Up Later\n\n=========================\nRULES\n=========================\n\n- Never invent facts.\n- Base your analysis only on the customer's message.\n- If information is unavailable, return \"Unknown\".\n- Keep the lead_summary concise and professional.\n- Return confidence as an integer only.\n- Return ONLY valid JSON.\n- Do NOT include markdown.\n- Do NOT include explanations.\n- Do NOT wrap the JSON in code blocks.\n- Ensure all field names use snake_case.\n\nThe JSON structure must exactly match:\n\n{\n  \"lead_summary\": \"\",\n  \"intent\": \"\",\n  \"category\": \"\",\n  \"pain_point\": \"\",\n  \"urgency\": \"\",\n  \"sentiment\": \"\",\n  \"confidence\": 0,\n  \"qualification_status\": \"\",\n  \"next_action\": \"\"\n}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        544,
+        96
+      ],
+      "id": "b5f76197-2558-497e-8bb4-3248582cba01",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "openai/gpt-oss-20b",
+          "mode": "list",
+          "cachedResultName": "openai/gpt-oss-20b"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        560,
+        304
+      ],
+      "id": "e439e408-9435-4b6f-9001-a8d1b68b3e93",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "ElpSuTJcjmLFzmqr",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        800,
+        -96
+      ],
+      "id": "3cfe4018-ef35-44cb-ae87-1ddcb8474941",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID_HERE",
+          "mode": "list",
+          "cachedResultName": "Day-1 N8n",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID_HERE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 372230663,
+          "mode": "list",
+          "cachedResultName": "Responses",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID_HERE/edit#gid=372230663"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "response_id": "={{ $json.response_id }}",
+            "lead_id": "={{ $json.lead_id }}",
+            "name": "={{ $json.name }}",
+            "email": "={{ $json.email }}",
+            "message": "={{ $json.message }}",
+            "status": "={{ $json.status }}",
+            "created_at": "={{ $json.created_at }}",
+            "Lead Summary": "={{ $json.lead_summary }}",
+            "Intent": "={{ $json.intent }}",
+            "Category": "={{ $json.category }}",
+            "Urgency": "={{ $json.urgency }}",
+            "Sentiment": "={{ $json.sentiment }}",
+            "Confidence": "={{ $json.confidence }}",
+            "Qualification Status": "={{ $json.qualification_status }}",
+            "Pain Point": "={{ $json.pain_point }}",
+            "Next Action": "={{ $json.next_action }}",
+            "Lead Score": "={{ $json.lead_score }}",
+            "Sales Priority": "={{ $json.sales_priority }}",
+            "Response Time": "={{ $json.response_time }}",
+            "Follow up Required": "={{ $json.follow_up_required }}",
+            "Updated At": "={{ $json.updated_at }}",
+            "Lead Temperature": "={{ $json.lead_temperature }}",
+            "Conversion Probability": "={{ $json.conversion_probability }}",
+            "Opportunity Level": "={{ $json.opportunity_level }}",
+            "Sales Recommendation": "={{ $json.sales_recommendation }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "response_id",
+              "displayName": "response_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "lead_id",
+              "displayName": "lead_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Lead Summary",
+              "displayName": "Lead Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Intent",
+              "displayName": "Intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Category",
+              "displayName": "Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Pain Point",
+              "displayName": "Pain Point",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Urgency",
+              "displayName": "Urgency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Sentiment",
+              "displayName": "Sentiment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Confidence",
+              "displayName": "Confidence",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Qualification Status",
+              "displayName": "Qualification Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Next Action",
+              "displayName": "Next Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Lead Score",
+              "displayName": "Lead Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Lead Temperature",
+              "displayName": "Lead Temperature",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Sales Priority",
+              "displayName": "Sales Priority",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Conversion Probability",
+              "displayName": "Conversion Probability",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Response Time",
+              "displayName": "Response Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Opportunity Level",
+              "displayName": "Opportunity Level",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Sales Recommendation",
+              "displayName": "Sales Recommendation",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Follow up Required",
+              "displayName": "Follow up Required",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Updated At",
+              "displayName": "Updated At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Column 26",
+              "displayName": "Column 26",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1232,
+        64
+      ],
+      "id": "0ef46f3d-b025-4949-bb1a-f5d3ea7ee9fd",
+      "name": "Append row in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "XUo0YZXw282TEr36",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "Setup Instructions:\n1. Add your OpenAI API key\n2. Connect Google Sheets\n3. Configure Gmail credentials\n4. Activate workflow"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        368,
+        -352
+      ],
+      "typeVersion": 1,
+      "id": "04a7c491-7cdc-4a49-86d4-4a0c18d474e3",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Customer Name:\n{{$json.name}}\n\nCustomer Email:\n{{$json.email}}\n\nOriginal Message:\n{{$json.message}}\n\nLead Summary:\n{{$json[\"Lead Summary\"]}}\n\nIntent:\n{{$json.Intent}}\n\nCategory:\n{{$json.Category}}\n\nPain Point:\n{{$json[\"Pain Point\"]}}\n\nUrgency:\n{{$json.Urgency}}\n\nSentiment:\n{{$json.Sentiment}}\n\nConfidence:\n{{$json.Confidence}}\n\nQualification Status:\n{{$json[\"Qualification Status\"]}}\n\nRecommended Next Action:\n{{$json[\"Next Action\"]}}\n\nLead Score:\n{{$json[\"Lead Score\"]}}\n\nLead Temperature:\n{{$json[\"Lead Temperature\"]}}\n\nSales Priority:\n{{$json[\"Sales Priority\"]}}\n\nConversion Probability:\n{{$json[\"Conversion Probability\"]}}\n\nResponse Time:\n{{$json[\"Response Time\"]}}\n\nOpportunity Level:\n{{$json[\"Opportunity Level\"]}}\n\nSales Recommendation:\n{{$json[\"Sales Recommendation\"]}}\n\nFollow Up Required:\n{{$json[\"Follow up Required\"]}}\n\nGenerate a personalized professional email response based ONLY on the above information.",
+        "options": {
+          "systemMessage": "You are an AI Customer Communication Assistant.\n\nYour role is to generate professional, personalized, and business-friendly email responses using the lead qualification and sales intelligence information provided.\n\nNever state that the customer's project is a good fit for the business unless that information is explicitly provided.\n\nInstead, state that the enquiry will be reviewed before determining the appropriate next steps.\n\nThe objective is to acknowledge the customer's enquiry, demonstrate understanding of their needs, set appropriate expectations, and naturally guide them toward the recommended next step.\n\n====================================================\nEMAIL GUIDELINES\n====================================================\n\nWrite an email that:\n\n• Greets the customer by their first name.\n• Thanks them for contacting us.\n• Acknowledges their enquiry using the Lead Summary.\n• Demonstrates understanding of their Pain Point without copying their original message.\n• Uses the Qualification Status and Sales Recommendation to personalize the response.\n• Maintains a warm, friendly and professional tone.\n• Naturally encourage the Recommended Next Action.\n• Ends with:\n\nBest regards,\n\nSupport Team\n\nKeep the email between 80 and 150 words.\n\n====================================================\nPERSONALIZATION\n====================================================\n\nUse the following information naturally when appropriate:\n\n- Lead Summary\n- Intent\n- Pain Point\n- Urgency\n- Qualification Status\n- Lead Temperature\n- Sales Priority\n- Sales Recommendation\n- Follow Up Required\n- Next Action\n\nNever expose internal business values such as:\n\n- Lead Score\n- Lead Temperature\n- Sales Priority\n- Conversion Probability\n- Opportunity Level\n- Confidence Score\n\nThese values are for internal decision making only.\n\nUse them only to influence the tone and urgency of the email.\n\n====================================================\nBEHAVIOR RULES\n====================================================\n\nIf Qualification Status is \"Qualified\":\n\n- Thank the customer.\n- Confirm that the enquiry has been received.\n- Encourage the Recommended Next Action.\n\nIf Qualification Status is \"Needs More Information\":\n\n- Thank the customer.\n- Politely explain that additional information is required.\n- Ask concise follow-up questions relevant to the enquiry.\n- Avoid making assumptions.\n\nIf Qualification Status is \"Unqualified\":\n\n- Thank the customer.\n- Politely acknowledge the enquiry.\n- Do not promise consultations, proposals or demos.\n\n====================================================\nSALES INTELLIGENCE RULES\n====================================================\n\nIf Sales Priority is High:\n\nMention that the team will prioritize reviewing the enquiry.\n\nIf Sales Priority is Medium:\n\nMention that the team will review the enquiry shortly.\n\nIf Sales Priority is Low:\n\nSimply acknowledge receipt without implying urgency.\n\nIf Follow Up Required is true:\n\nEncourage the customer to reply so the team can continue the discussion.\n\nIf Sales Recommendation is:\n\nSchedule Consultation\n→ Invite the customer to arrange a consultation.\n\nSchedule Demo\n→ Invite the customer to arrange a product demonstration.\n\nAssign Sales Representative\n→ Inform the customer that an appropriate team member will review the enquiry and reach out if needed.\n\nSend Proposal\n→ Mention that a proposal will be prepared after reviewing the requirements.\n\nSend Pricing\n→ Mention that pricing details will be shared after reviewing the request.\n\nRequest More Information\n→ Politely ask for the missing information.\n\nFollow Up Later\n→ Thank the customer and explain that the team will reconnect at the appropriate time.\n\n====================================================\nIMPORTANT RULES\n====================================================\n\nThe email must work for ANY business domain.\n\nNever assume the business type.\n\nNever invent services.\n\nNever invent company information.\n\nNever invent phone numbers.\n\nNever invent websites.\n\nNever invent booking links.\n\nNever mention AI analysis, lead scores, sales priorities or internal business evaluations.\n\nNever use placeholders such as:\n\n[Company Name]\n\n[Phone Number]\n\n[Website]\n\nKeep the email natural, concise and conversational.\n\nDo not use markdown.\n\nDo not use bullet points.\n\nAvoid sounding robotic or overly promotional.\n\n====================================================\nOUTPUT FORMAT\n====================================================\n\nReturn ONLY the email body.\n\nDo NOT include:\n\n- Subject line\n- JSON\n- Markdown\n- Code blocks\n- Explanations"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1920,
+        192
+      ],
+      "id": "7d500402-5b69-46ec-a993-b7ac540de6ff",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "openai/gpt-oss-120b",
+          "mode": "list",
+          "cachedResultName": "openai/gpt-oss-120b"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1888,
+        368
+      ],
+      "id": "55dddeff-41ac-4ffa-9f79-014c37a88f39",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "ElpSuTJcjmLFzmqr",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const signature = \"\\n\\nBest regards,\\n\\nSupport Team\";\nreturn {\n  to: $('Code').first().json.email,\n  subject: \"We've received your enquiry\",\n  email_body: $json.output,\n  status: \"Email Ready\",\n  sent_at: new Date().toISOString()\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2208,
+        176
+      ],
+      "id": "e4563c12-e0de-45a8-92c5-3baff1618176",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse AI response safely\nlet qualification = {};\n\ntry {\n  qualification = JSON.parse($json.output);\n} catch (error) {\n  qualification = {\n    lead_summary: \"Unknown\",\n    intent: \"Unknown\",\n    category: \"Unknown\",\n    pain_point: \"Unknown\",\n    urgency: \"Unknown\",\n    sentiment: \"Unknown\",\n    confidence: 0,\n    qualification_status: \"Needs More Information\",\n    next_action: \"Request More Information\"\n  };\n}\n\nreturn {\n  response_id: Date.now(),\n  lead_id: $json.id,\n\n  // Original Lead Data\n  name: $json.name,\n  email: $json.email,\n  message: $json.message,\n\n  // AI Qualification Data\n  lead_summary: qualification.lead_summary,\n  intent: qualification.intent,\n  category: qualification.category,\n  pain_point: qualification.pain_point,\n  urgency: qualification.urgency,\n  sentiment: qualification.sentiment,\n  confidence: qualification.confidence,\n  qualification_status: qualification.qualification_status,\n  next_action: qualification.next_action,\n\n  // Workflow Metadata\n  status: \"Qualified\",\n  created_at: new Date().toISOString()\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        992,
+        -48
+      ],
+      "id": "52ff6868-1c4c-4a99-8346-4d5493b9dbaa",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Evaluate the following qualified lead and generate a sales intelligence report.\n\nLead Name:\n{{$json.name}}\n\nLead Summary:\n{{$json.lead_summary}}\n\nIntent:\n{{$json.intent}}\n\nCategory:\n{{$json.category}}\n\nPain Point:\n{{$json.pain_point}}\n\nUrgency:\n{{$json.urgency}}\n\nSentiment:\n{{$json.sentiment}}\n\nConfidence:\n{{$json.confidence}}\n\nQualification Status:\n{{$json.qualification_status}}\n\nRecommended Next Action:\n{{$json.next_action}}\n\nReturn the sales intelligence report.",
+        "options": {
+          "systemMessage": "You are an AI Sales Intelligence Assistant.\n\nYour responsibility is to evaluate already qualified leads and generate actionable sales intelligence that helps businesses prioritize follow-ups.\n\nThe lead has already been qualified by another AI system.\n\nDO NOT repeat lead qualification tasks such as:\n- Intent Detection\n- Category Classification\n- Pain Point Extraction\n- Sentiment Analysis\n- Qualification Status\n\nInstead, evaluate the business value of the lead and generate a sales intelligence report.\n\n====================================================\nSCORING FRAMEWORK\n====================================================\n\nBegin with a base score of 50.\n\nAdjust the score using the following guidelines.\n\nQualification Status\n\nQualified\n+20\n\nNeeds More Information\n+5\n\nUnqualified\n+0\n\n----------------------------------------------------\n\nIntent Clarity\n\nVery clear business need or consultation request\n+10\n\nGeneral enquiry\n+5\n\nUnclear request\n+0\n\n----------------------------------------------------\n\nConfidence Score\n\n95-100\n+10\n\n80-94\n+7\n\n60-79\n+4\n\nBelow 60\n+0\n\n----------------------------------------------------\n\nUrgency\n\nHigh\n+10\n\nMedium\n+5\n\nLow\n+0\n\nUnknown\n+0\n\n----------------------------------------------------\n\nSentiment\n\nPositive\n+5\n\nNeutral\n+2\n\nNegative\n+0\n\n----------------------------------------------------\n\nProject Request Adjustment\n\nIf the Intent is \"Project Request\" and the customer is requesting a custom solution, software development, AI platform, workflow automation, enterprise automation, or similar implementation:\n\n- Treat it as a potentially valuable opportunity.\n- Increase Opportunity Level when appropriate.\n- Do NOT automatically assign a High Lead Score.\n- Keep the score consistent with Qualification Status, Confidence and Urgency.\n\n----------------------------------------------------\n\nClamp the final Lead Score between 0 and 100.\n\n====================================================\nFIELDS TO GENERATE\n====================================================\n\n1. lead_score\n\nReturn the calculated Lead Score as an integer.\n\n----------------------------------------------------\n\n2. lead_temperature\n\nChoose ONLY one.\n\nHot\nWarm\nCold\n\nRules\n\nHot\n85-100\n\nWarm\n60-84\n\nCold\n0-59\n\n----------------------------------------------------\n\n3. sales_priority\n\nChoose ONLY one.\n\nHigh\nMedium\nLow\n\nRules\n\nHigh\nLead Score >= 85\n\nMedium\nLead Score 60-84\n\nLow\nLead Score below 60\n\n----------------------------------------------------\n\n4. conversion_probability\n\nChoose ONLY one.\n\nHigh\nMedium\nLow\n\nRules\n\nHigh\nLead Score >= 85\n\nMedium\nLead Score 60-84\n\nLow\nLead Score below 60\n\n----------------------------------------------------\n\n5. response_time\n\nChoose ONLY one.\n\nImmediately\n\nWithin 2 Hours\n\nWithin 24 Hours\n\nWithin This Week\n\nRules\n\nLead Score >= 90\nImmediately\n\nLead Score 80-89\nWithin 2 Hours\n\nLead Score 60-79\nWithin 24 Hours\n\nBelow 60\nWithin This Week\n\n----------------------------------------------------\n\n6. opportunity_level\n\nChoose ONLY one.\n\nHigh\nMedium\nLow\n\nRules\n\nHigh\nLead Score >= 85\n\nMedium\nLead Score 60-84\n\nLow\nLead Score below 60\n\n----------------------------------------------------\n\n7. sales_recommendation\n\nChoose ONLY one.\n\nSchedule Consultation\n\nSchedule Demo\n\nAssign Sales Representative\n\nSend Proposal\n\nSend Pricing\n\nRequest More Information\n\nFollow Up Later\n\nRules\n\nCareer Consultation\n→ Schedule Consultation\n\nProduct Inquiry\n→ Send Pricing\n\nService Inquiry\n→ Schedule Demo\n\nProject Request\n→ Assign Sales Representative\n\nPricing Inquiry\n→ Send Pricing\n\nTechnical Support\n→ Assign Sales Representative\n\nGeneral Question\n→ Request More Information\n\n----------------------------------------------------\n\n8. follow_up_required\n\nReturn ONLY a boolean value.\n\nRules\n\ntrue\n\n- High Sales Priority\n- Medium Sales Priority\n- Qualified\n- Needs More Information\n\nfalse\n\n- Low Sales Priority\n- Unqualified\n\n====================================================\nIMPORTANT RULES\n====================================================\n\nUse ONLY the information supplied.\n\nNever invent customer information.\n\nNever contradict the qualification results.\n\nBe internally consistent.\n\nExamples of INVALID combinations:\n\n❌ Lead Score: 92\nSales Priority: Low\n\n❌ Lead Score: 95\nResponse Time: Within This Week\n\n❌ Lead Score: 90\nConversion Probability: Low\n\n❌ Lead Temperature: Hot\nOpportunity Level: Low\n\n❌ Qualification Status: Unqualified\nLead Score: 95\n\nIf one field changes, ensure all dependent fields remain logically consistent.\n\n====================================================\nOUTPUT FORMAT\n====================================================\n\nReturn ONLY valid JSON.\n\nDo NOT return markdown.\n\nDo NOT return explanations.\n\nDo NOT return code blocks.\n\nReturn exactly this structure.\n\n{\n  \"lead_score\": 0,\n  \"lead_temperature\": \"\",\n  \"sales_priority\": \"\",\n  \"conversion_probability\": \"\",\n  \"response_time\": \"\",\n  \"opportunity_level\": \"\",\n  \"sales_recommendation\": \"\",\n  \"follow_up_required\": true\n}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        896,
+        336
+      ],
+      "id": "383f3abd-8d43-42b5-bf06-a306b0f66475",
+      "name": "AI Agent2"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "openai/gpt-oss-120b",
+          "mode": "list",
+          "cachedResultName": "openai/gpt-oss-120b"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        800,
+        512
+      ],
+      "id": "0e4e03fd-afdf-4ef3-8277-59a12fbb34e2",
+      "name": "OpenAI Chat Model2",
+      "credentials": {
+        "openAiApi": {
+          "id": "ElpSuTJcjmLFzmqr",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse AI Sales Intelligence response safely\nlet sales = {};\n\ntry {\n  sales = JSON.parse($json.output);\n} catch (error) {\n  sales = {\n    lead_score: 0,\n    lead_temperature: \"Unknown\",\n    sales_priority: \"Unknown\",\n    conversion_probability: \"Unknown\",\n    response_time: \"Unknown\",\n    opportunity_level: \"Unknown\",\n    sales_recommendation: \"Unknown\",\n    follow_up_required: false\n  };\n}\n\n// Get data from the previous Qualification Code Node\nconst lead = $('Code').first().json;\n\n// Return merged object\nreturn {\n  // Existing Lead Information\n  response_id: lead.response_id,\n  lead_id: lead.lead_id,\n  name: lead.name,\n  email: lead.email,\n  message: lead.message,\n\n  // Qualification Information\n  lead_summary: lead.lead_summary,\n  intent: lead.intent,\n  category: lead.category,\n  pain_point: lead.pain_point,\n  urgency: lead.urgency,\n  sentiment: lead.sentiment,\n  confidence: lead.confidence,\n  qualification_status: lead.qualification_status,\n  next_action: lead.next_action,\n\n  // Sales Intelligence\n  lead_score: sales.lead_score,\n  lead_temperature: sales.lead_temperature,\n  sales_priority: sales.sales_priority,\n  conversion_probability: sales.conversion_probability,\n  response_time: sales.response_time,\n  opportunity_level: sales.opportunity_level,\n  sales_recommendation: sales.sales_recommendation,\n  follow_up_required: sales.follow_up_required,\n\n  // Workflow Metadata\n  status: \"Sales Ready\",\n  created_at: lead.created_at,\n  updated_at: new Date().toISOString()\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1232,
+        384
+      ],
+      "id": "d53651c4-109e-4ef8-81ff-aa66e9f244f1",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ========================================\n// AI CRM & Follow-up Automation\n// Part 4 - Production Version\n// ========================================\n\n// Clone incoming lead data\nconst lead = { ...$json };\n\n// Current date\nconst today = new Date();\nconst followUpDate = new Date(today);\n\n// Default CRM values\nlet crmStatus = \"Pending Review\";\nlet assignedTo = \"Sales Queue\";\nlet lastAction = \"CRM Record Created\";\nlet notificationRequired = false;\n\n// ========================================\n// CRM BUSINESS LOGIC\n// ========================================\n\nswitch (lead.sales_priority) {\n\n  case \"High\":\n    crmStatus = \"Pending Contact\";\n    assignedTo = \"Sales Team\";\n    followUpDate.setDate(today.getDate()); // Today\n    notificationRequired = true;\n    break;\n\n  case \"Medium\":\n    crmStatus = \"Follow-up Scheduled\";\n    assignedTo = \"Sales Queue\";\n    followUpDate.setDate(today.getDate() + 1); // Tomorrow\n    notificationRequired = true;\n    break;\n\n  case \"Low\":\n    crmStatus = \"Lead Nurturing\";\n    assignedTo = \"Marketing Queue\";\n    followUpDate.setDate(today.getDate() + 3);\n    notificationRequired = false;\n    break;\n\n  default:\n    crmStatus = \"Pending Review\";\n    assignedTo = \"Sales Queue\";\n    followUpDate.setDate(today.getDate() + 2);\n    notificationRequired = false;\n}\n\n// ========================================\n// FOLLOW-UP CHECK\n// ========================================\n\nif (lead.follow_up_required === false) {\n  crmStatus = \"No Follow-up Required\";\n  notificationRequired = false;\n}\n\n// ========================================\n// INTERNAL CRM NOTES\n// ========================================\n\nconst internalNotes =\n`Lead Summary: ${lead.lead_summary}\n\nIntent: ${lead.intent}\nCategory: ${lead.category}\n\nLead Score: ${lead.lead_score}\nLead Temperature: ${lead.lead_temperature}\n\nSales Priority: ${lead.sales_priority}\nOpportunity Level: ${lead.opportunity_level}\n\nRecommendation: ${lead.sales_recommendation}\n\nFollow-up Required: ${lead.follow_up_required ? \"Yes\" : \"No\"}`;\n\n// ========================================\n// RETURN FINAL CRM RECORD\n// ========================================\n\nreturn {\n\n  // Existing Lead Information\n  ...lead,\n\n  // CRM Automation\n  crm_status: crmStatus,\n  assigned_to: assignedTo,\n  follow_up_date: followUpDate.toISOString().split(\"T\")[0],\n  last_action: lastAction,\n  internal_notes: internalNotes,\n  notification_required: notificationRequired,\n\n  // Workflow Status\n  status: \"CRM Updated\",\n  crm_updated_at: new Date().toISOString()\n\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1472,
+        400
+      ],
+      "id": "520e5990-bb1e-4800-940a-23d14a612336",
+      "name": "Code in JavaScript3"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID_HERE",
+          "mode": "list",
+          "cachedResultName": "Day-1 N8n",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID_HERE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 868659410,
+          "mode": "list",
+          "cachedResultName": "CRM forms",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID_HERE/edit#gid=868659410"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "CRM Status": "={{ $json.crm_status }}",
+            "Assigned To": "={{ $json.assigned_to }}",
+            "Follow-up Date": "={{ $json.follow_up_date }}",
+            "Last Action": "={{ $json.last_action }}",
+            "Internal Notes": "={{ $json.internal_notes }}",
+            "Notification Required": "={{ $json.notification_required }}",
+            "CRM Updated At": "={{ $json.crm_updated_at }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "CRM Status",
+              "displayName": "CRM Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Assigned To",
+              "displayName": "Assigned To",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Follow-up Date",
+              "displayName": "Follow-up Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Last Action",
+              "displayName": "Last Action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Internal Notes",
+              "displayName": "Internal Notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Notification Required",
+              "displayName": "Notification Required",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "CRM Updated At",
+              "displayName": "CRM Updated At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1680,
+        432
+      ],
+      "id": "f1393c17-0697-4a61-b2a0-f8468d05f2f2",
+      "name": "Append row in sheet2",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "XUo0YZXw282TEr36",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1488,
+        -80
+      ],
+      "id": "f7898296-05ce-4ff1-93e4-1bee80590bf7",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b63fd6af-60fb-45c9-b3be-a546ac5f8b04",
+              "leftValue": "={{ $json[\"Notification Required\"] }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1696,
+        -80
+      ],
+      "id": "6e51d560-7234-481d-a7c7-329c9bc0f20c",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "sendTo": "your-email@example.com",
+        "subject": "=🚨 {{$json[\"Sales Priority\"]}} Priority Lead - {{$json.name}}",
+        "emailType": "text",
+        "message": "=🚨 New Lead Requires Attention  A new lead has been evaluated and is ready for follow-up. \n━━━━━━━━━━━━━━━━━━━━━━ 👤 Customer Details ━━━━━━━━━━━━━━━━━━━━━━ \nName: {{$json.name}}\nEmail: {{$json.email}}\n━━━━━━━━━━━━━━━━━━━━━━ 📝 Lead Information ━━━━━━━━━━━━━━━━━━━━━━ \nIntent: {{$json.Intent}}\nCategory: {{$json.Category}}\nPain Point: {{$json[\"Pain Point\"]}}\n━━━━━━━━━━━━━━━━━━━━━━ 📊 Sales Intelligence ━━━━━━━━━━━━━━━━━━━━━━  \nLead Score: {{$json[\"Lead Score\"]}} \nLead Temperature: {{$json[\"Lead Temperature\"]}} \nSales Priority: {{$json[\"Sales Priority\"]}}\nConversion Probability: {{$json[\"Conversion Probability\"]}}\nOpportunity Level: {{$json[\"Opportunity Level\"]}}\n━━━━━━━━━━━━━━━━━━━━━━ 🏢 CRM Information ━━━━━━━━━━━━━━━━━━━━━━\nCRM Status: {{$json[\"CRM Status\"]}}\nAssigned To: {{$json[\"Assigned To\"]}} \nFollow-up Date: {{$json[\"Follow-up Date\"]}} \nSales Recommendation: {{$json[\"Sales Recommendation\"]}} \n━━━━━━━━━━━━━━━━━━━━━━ 📌 Internal Notes ━━━━━━━━━━━━━━━━━━━━━━ \n{{$json[\"Internal Notes\"]}}\n━━━━━━━━━━━━━━━━━━━━━━ \nPlease review this lead and take the recommended next action.  This notification was generated automatically by the AI CRM Automation workflow.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2176,
+        -128
+      ],
+      "id": "a6fcf862-a2c2-417b-8891-0755d96b5dc0",
+      "name": "Send a message1",
+      "webhookId": "283a1e33-9809-42af-b652-5550365b8496",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "dJo19xe1bVod4Y6k",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1952,
+        -304
+      ],
+      "id": "d821fb02-379f-45db-93a6-c6775db9ab5c",
+      "name": "Merge2"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        []
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet1": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "AI Agent2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent2": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript3",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Append row in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript3": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet2": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message1": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge2": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "saveDataErrorExecution": "all",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": true
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "pinData": {},
+  "versionId": "9f10b8fd-477f-4078-8611-50714d6c3609",
+  "activeVersionId": "9f10b8fd-477f-4078-8611-50714d6c3609",
+  "versionCounter": 330,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-06-05T08:30:28.753Z",
+      "createdAt": "2026-06-05T08:30:28.753Z",
+      "role": "workflow:owner",
+      "workflowId": "QJuF5L7xYAo60fXx",
+      "projectId": "loWf0mBs1xKuh5N3",
+      "project": {
+        "updatedAt": "2026-06-04T07:55:05.260Z",
+        "createdAt": "2026-06-04T07:52:41.897Z",
+        "id": "loWf0mBs1xKuh5N3",
+        "name": "Your Name <your-email@example.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "8d994dc9-eaab-443f-93bf-ef4aa823f36d"
+      }
+    }
+  ],
+  "tags": [
+    {
+      "updatedAt": "2026-06-20T17:38:23.795Z",
+      "createdAt": "2026-06-20T17:38:23.795Z",
+      "id": "32yMCuxfMdmAVvGK",
+      "name": "lead generation"
+    },
+    {
+      "updatedAt": "2026-06-09T06:33:27.317Z",
+      "createdAt": "2026-06-09T06:33:27.317Z",
+      "id": "8ZUaEfWmhomQ0P8p",
+      "name": "n8n"
+    },
+    {
+      "updatedAt": "2026-06-09T06:33:15.749Z",
+      "createdAt": "2026-06-09T06:33:15.749Z",
+      "id": "OqenQjr9s45g7AEO",
+      "name": "ai"
+    },
+    {
+      "updatedAt": "2026-06-09T06:33:45.548Z",
+      "createdAt": "2026-06-09T06:33:45.548Z",
+      "id": "SSAFLny1wplVixFm",
+      "name": "ai agent"
+    },
+    {
+      "updatedAt": "2026-06-19T18:47:33.921Z",
+      "createdAt": "2026-06-19T18:47:33.921Z",
+      "id": "adTN6XPgfo01vqx0",
+      "name": "ai automation"
+    }
+  ],
+  "parentFolder": null,
+  "activeVersion": {
+    "updatedAt": "2026-08-06T14:06:20.000Z",
+    "createdAt": "2026-08-06T13:44:48.338Z",
+    "versionId": "9f10b8fd-477f-4078-8611-50714d6c3609",
+    "workflowId": "QJuF5L7xYAo60fXx",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "lead-capture",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          -240,
+          16
+        ],
+        "id": "ccbbd005-ce0c-44ed-8ab9-7d5a57dbfc1c",
+        "name": "Webhook",
+        "webhookId": "93be7426-fc23-4626-807d-d5d9011cd457"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "fb0cc939-85dd-47e9-ad62-ba8d71482fb6",
+                "name": "name",
+                "value": "={{ $json.body.name }}",
+                "type": "string"
+              },
+              {
+                "id": "cffe2945-5d3f-4ae0-b19c-45ebbcae810d",
+                "name": "email",
+                "value": "={{ $json.body.email }}",
+                "type": "string"
+              },
+              {
+                "id": "addc2f37-e318-4bdc-93e1-3d518a5427e5",
+                "name": "message",
+                "value": "={{ $json.body.message }}",
+                "type": "string"
+              },
+              {
+                "id": "d7a75025-cfc8-4d81-9dcc-db8d55488ff5",
+                "name": "created_at",
+                "value": "={{$now}}",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          -48,
+          32
+        ],
+        "id": "a0ed9597-8d34-4e18-83c0-696dd18ce951",
+        "name": "Edit Fields"
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForEachItem",
+          "jsCode": "return {\n  id: Date.now(),\n  name: $json.name,\n  email: $json.email,\n  message: $json.message,\n  created_at: $json.created_at\n};"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          128,
+          32
+        ],
+        "id": "41e2e96e-ad50-4fde-8e52-54b53ece1369",
+        "name": "Code in JavaScript"
+      },
+      {
+        "parameters": {
+          "sendTo": "={{ $json.to }}",
+          "subject": "={{ $json.subject }}",
+          "emailType": "text",
+          "message": "={{ $json.email_body }}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.2,
+        "position": [
+          2368,
+          160
+        ],
+        "id": "a9d6df2a-1ad1-4a98-83e0-51c3dede151e",
+        "name": "Send a message",
+        "webhookId": "a2d1ebb2-002d-48e9-9439-ef40bac9a903",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "dJo19xe1bVod4Y6k",
+            "name": "Gmail account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "append",
+          "documentId": {
+            "__rl": true,
+            "value": "YOUR_GOOGLE_SHEET_ID_HERE",
+            "mode": "list",
+            "cachedResultName": "Day-1 N8n",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID_HERE/edit?usp=drivesdk"
+          },
+          "sheetName": {
+            "__rl": true,
+            "value": "gid=0",
+            "mode": "list",
+            "cachedResultName": "Sheet1",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID_HERE/edit#gid=0"
+          },
+          "columns": {
+            "mappingMode": "autoMapInputData",
+            "value": {},
+            "matchingColumns": [
+              "id"
+            ],
+            "schema": [
+              {
+                "id": "id",
+                "displayName": "id",
+                "required": false,
+                "defaultMatch": true,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "name",
+                "displayName": "name",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "email",
+                "displayName": "email",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "message",
+                "displayName": "message",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "created_at",
+                "displayName": "created_at",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.googleSheets",
+        "typeVersion": 4.7,
+        "position": [
+          336,
+          48
+        ],
+        "id": "72948474-ee24-4e5d-b198-61547903abcc",
+        "name": "Append row in sheet",
+        "credentials": {
+          "googleSheetsOAuth2Api": {
+            "id": "XUo0YZXw282TEr36",
+            "name": "Google Sheets account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "=Analyze the following lead.\n\nName:\n{{$json.name}}\n\nEmail:\n{{$json.email}}\n\nCustomer Message:\n{{$json.message}}\n\nReturn the lead qualification details.",
+          "options": {
+            "systemMessage": "You are an AI Lead Qualification Assistant for a business.\n\nYour role is to analyze incoming customer enquiries and convert them into structured business information that helps sales or support teams understand the lead before responding.\n\nAnalyze the customer's message carefully and return a structured qualification report.\n\n=========================\nFIELDS TO GENERATE\n=========================\n\n1. lead_summary\nWrite a concise 1-2 sentence business summary.\nDo NOT simply repeat the customer's message.\nSummarize what the customer is trying to achieve and what assistance they need.\n\nGood Example:\n\"The customer is looking for professional career guidance and consultation regarding future career opportunities.\"\n\nBad Example:\n\"Customer needs career suggestions.\"\n\n------------------------------------------------\n\n2. intent\n\nChoose the single most appropriate value:\n\n- Career Consultation\n- Product Inquiry\n- Service Inquiry\n- Pricing Inquiry\n- Technical Support\n- Project Request\n- Partnership\n- General Question\n- Other\n\n------------------------------------------------\n\n3. category\n\nChoose one:\n\n- Consultation\n- Automation\n- Development\n- Support\n- Sales\n- Education\n- Marketing\n- Other\n\n------------------------------------------------\n\n4. pain_point\n\nIdentify the customer's primary business problem or need.\n\nExamples:\n\n- Needs career guidance\n- Manual business processes\n- Requires workflow automation\n- Looking for pricing information\n- Needs technical assistance\n\nIf the problem cannot be identified, return:\n\nUnknown\n\n------------------------------------------------\n\n5. Urgency Guidelines\n\nHigh\n- ASAP\n- Immediately\n- Urgent\n- Today\n- Emergency\n- Time-sensitive requests\n\nMedium\n- Customer is actively requesting help\n- Wants consultation\n- Needs assistance\n- Wants to discuss a service\n- Requests guidance or recommendations\n\nLow\n- Just exploring options\n- General information request\n- Browsing services\n- Curious about offerings\n\nUnknown\n- Insufficient information\n------------------------------------------------\n\n6. sentiment\n\nChoose only one:\n\nPositive\nNeutral\nNegative\n\nGuidelines:\n\nPositive\n- polite requests\n- interested customers\n- appreciation\n- friendly enquiries\n\nNeutral\n- factual statements\n- information requests without emotion\n\nNegative\n- complaints\n- frustration\n- dissatisfaction\n- anger\n\nDo NOT classify polite requests for help as Negative.\nMost consultation requests should be Positive.\n\n------------------------------------------------\n\n7. confidence\n\nReturn an integer between 0 and 100 indicating your confidence in the analysis.\n\nUse:\n\n95-100\nVery clear enquiry\n\n80-94\nReasonably clear\n\n60-79\nSome ambiguity\n\nBelow 60\nVery little information\n\n------------------------------------------------\n\n8. qualification_status\n\nChoose only one:\n\nQualified\nNeeds More Information\nUnqualified\n\nQualified\nCustomer has a clear need or enquiry.\n\nNeeds More Information\nCustomer's intent exists but more details are required.\n\nUnqualified\nSpam, irrelevant, or meaningless message.\n\n------------------------------------------------\n\n9. next_action\n\nChoose the best recommendation:\n\nSchedule Consultation\nSchedule Demo\nSend Pricing\nAssign Support Team\nRequest More Information\nSend Documentation\nFollow Up Later\n\n=========================\nRULES\n=========================\n\n- Never invent facts.\n- Base your analysis only on the customer's message.\n- If information is unavailable, return \"Unknown\".\n- Keep the lead_summary concise and professional.\n- Return confidence as an integer only.\n- Return ONLY valid JSON.\n- Do NOT include markdown.\n- Do NOT include explanations.\n- Do NOT wrap the JSON in code blocks.\n- Ensure all field names use snake_case.\n\nThe JSON structure must exactly match:\n\n{\n  \"lead_summary\": \"\",\n  \"intent\": \"\",\n  \"category\": \"\",\n  \"pain_point\": \"\",\n  \"urgency\": \"\",\n  \"sentiment\": \"\",\n  \"confidence\": 0,\n  \"qualification_status\": \"\",\n  \"next_action\": \"\"\n}"
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 3.1,
+        "position": [
+          544,
+          96
+        ],
+        "id": "b5f76197-2558-497e-8bb4-3248582cba01",
+        "name": "AI Agent"
+      },
+      {
+        "parameters": {
+          "model": {
+            "__rl": true,
+            "value": "openai/gpt-oss-20b",
+            "mode": "list",
+            "cachedResultName": "openai/gpt-oss-20b"
+          },
+          "builtInTools": {},
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+        "typeVersion": 1.3,
+        "position": [
+          560,
+          304
+        ],
+        "id": "e439e408-9435-4b6f-9001-a8d1b68b3e93",
+        "name": "OpenAI Chat Model",
+        "credentials": {
+          "openAiApi": {
+            "id": "ElpSuTJcjmLFzmqr",
+            "name": "OpenAI account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "mode": "combine",
+          "combineBy": "combineByPosition",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.merge",
+        "typeVersion": 3.2,
+        "position": [
+          800,
+          -96
+        ],
+        "id": "3cfe4018-ef35-44cb-ae87-1ddcb8474941",
+        "name": "Merge"
+      },
+      {
+        "parameters": {
+          "operation": "append",
+          "documentId": {
+            "__rl": true,
+            "value": "YOUR_GOOGLE_SHEET_ID_HERE",
+            "mode": "list",
+            "cachedResultName": "Day-1 N8n",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID_HERE/edit?usp=drivesdk"
+          },
+          "sheetName": {
+            "__rl": true,
+            "value": 372230663,
+            "mode": "list",
+            "cachedResultName": "Responses",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID_HERE/edit#gid=372230663"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "response_id": "={{ $json.response_id }}",
+              "lead_id": "={{ $json.lead_id }}",
+              "name": "={{ $json.name }}",
+              "email": "={{ $json.email }}",
+              "message": "={{ $json.message }}",
+              "status": "={{ $json.status }}",
+              "created_at": "={{ $json.created_at }}",
+              "Lead Summary": "={{ $json.lead_summary }}",
+              "Intent": "={{ $json.intent }}",
+              "Category": "={{ $json.category }}",
+              "Urgency": "={{ $json.urgency }}",
+              "Sentiment": "={{ $json.sentiment }}",
+              "Confidence": "={{ $json.confidence }}",
+              "Qualification Status": "={{ $json.qualification_status }}",
+              "Pain Point": "={{ $json.pain_point }}",
+              "Next Action": "={{ $json.next_action }}",
+              "Lead Score": "={{ $json.lead_score }}",
+              "Sales Priority": "={{ $json.sales_priority }}",
+              "Response Time": "={{ $json.response_time }}",
+              "Follow up Required": "={{ $json.follow_up_required }}",
+              "Updated At": "={{ $json.updated_at }}",
+              "Lead Temperature": "={{ $json.lead_temperature }}",
+              "Conversion Probability": "={{ $json.conversion_probability }}",
+              "Opportunity Level": "={{ $json.opportunity_level }}",
+              "Sales Recommendation": "={{ $json.sales_recommendation }}"
+            },
+            "matchingColumns": [],
+            "schema": [
+              {
+                "id": "response_id",
+                "displayName": "response_id",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "lead_id",
+                "displayName": "lead_id",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "name",
+                "displayName": "name",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "email",
+                "displayName": "email",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "message",
+                "displayName": "message",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Lead Summary",
+                "displayName": "Lead Summary",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "status",
+                "displayName": "status",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "created_at",
+                "displayName": "created_at",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Intent",
+                "displayName": "Intent",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Category",
+                "displayName": "Category",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Pain Point",
+                "displayName": "Pain Point",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Urgency",
+                "displayName": "Urgency",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Sentiment",
+                "displayName": "Sentiment",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Confidence",
+                "displayName": "Confidence",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Qualification Status",
+                "displayName": "Qualification Status",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Next Action",
+                "displayName": "Next Action",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Lead Score",
+                "displayName": "Lead Score",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Lead Temperature",
+                "displayName": "Lead Temperature",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Sales Priority",
+                "displayName": "Sales Priority",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Conversion Probability",
+                "displayName": "Conversion Probability",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Response Time",
+                "displayName": "Response Time",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Opportunity Level",
+                "displayName": "Opportunity Level",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Sales Recommendation",
+                "displayName": "Sales Recommendation",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Follow up Required",
+                "displayName": "Follow up Required",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Updated At",
+                "displayName": "Updated At",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Column 26",
+                "displayName": "Column 26",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": true
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.googleSheets",
+        "typeVersion": 4.7,
+        "position": [
+          1232,
+          64
+        ],
+        "id": "0ef46f3d-b025-4949-bb1a-f5d3ea7ee9fd",
+        "name": "Append row in sheet1",
+        "credentials": {
+          "googleSheetsOAuth2Api": {
+            "id": "XUo0YZXw282TEr36",
+            "name": "Google Sheets account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "content": "Setup Instructions:\n1. Add your OpenAI API key\n2. Connect Google Sheets\n3. Configure Gmail credentials\n4. Activate workflow"
+        },
+        "type": "n8n-nodes-base.stickyNote",
+        "position": [
+          368,
+          -352
+        ],
+        "typeVersion": 1,
+        "id": "04a7c491-7cdc-4a49-86d4-4a0c18d474e3",
+        "name": "Sticky Note"
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "=Customer Name:\n{{$json.name}}\n\nCustomer Email:\n{{$json.email}}\n\nOriginal Message:\n{{$json.message}}\n\nLead Summary:\n{{$json[\"Lead Summary\"]}}\n\nIntent:\n{{$json.Intent}}\n\nCategory:\n{{$json.Category}}\n\nPain Point:\n{{$json[\"Pain Point\"]}}\n\nUrgency:\n{{$json.Urgency}}\n\nSentiment:\n{{$json.Sentiment}}\n\nConfidence:\n{{$json.Confidence}}\n\nQualification Status:\n{{$json[\"Qualification Status\"]}}\n\nRecommended Next Action:\n{{$json[\"Next Action\"]}}\n\nLead Score:\n{{$json[\"Lead Score\"]}}\n\nLead Temperature:\n{{$json[\"Lead Temperature\"]}}\n\nSales Priority:\n{{$json[\"Sales Priority\"]}}\n\nConversion Probability:\n{{$json[\"Conversion Probability\"]}}\n\nResponse Time:\n{{$json[\"Response Time\"]}}\n\nOpportunity Level:\n{{$json[\"Opportunity Level\"]}}\n\nSales Recommendation:\n{{$json[\"Sales Recommendation\"]}}\n\nFollow Up Required:\n{{$json[\"Follow up Required\"]}}\n\nGenerate a personalized professional email response based ONLY on the above information.",
+          "options": {
+            "systemMessage": "You are an AI Customer Communication Assistant.\n\nYour role is to generate professional, personalized, and business-friendly email responses using the lead qualification and sales intelligence information provided.\n\nNever state that the customer's project is a good fit for the business unless that information is explicitly provided.\n\nInstead, state that the enquiry will be reviewed before determining the appropriate next steps.\n\nThe objective is to acknowledge the customer's enquiry, demonstrate understanding of their needs, set appropriate expectations, and naturally guide them toward the recommended next step.\n\n====================================================\nEMAIL GUIDELINES\n====================================================\n\nWrite an email that:\n\n• Greets the customer by their first name.\n• Thanks them for contacting us.\n• Acknowledges their enquiry using the Lead Summary.\n• Demonstrates understanding of their Pain Point without copying their original message.\n• Uses the Qualification Status and Sales Recommendation to personalize the response.\n• Maintains a warm, friendly and professional tone.\n• Naturally encourage the Recommended Next Action.\n• Ends with:\n\nBest regards,\n\nSupport Team\n\nKeep the email between 80 and 150 words.\n\n====================================================\nPERSONALIZATION\n====================================================\n\nUse the following information naturally when appropriate:\n\n- Lead Summary\n- Intent\n- Pain Point\n- Urgency\n- Qualification Status\n- Lead Temperature\n- Sales Priority\n- Sales Recommendation\n- Follow Up Required\n- Next Action\n\nNever expose internal business values such as:\n\n- Lead Score\n- Lead Temperature\n- Sales Priority\n- Conversion Probability\n- Opportunity Level\n- Confidence Score\n\nThese values are for internal decision making only.\n\nUse them only to influence the tone and urgency of the email.\n\n====================================================\nBEHAVIOR RULES\n====================================================\n\nIf Qualification Status is \"Qualified\":\n\n- Thank the customer.\n- Confirm that the enquiry has been received.\n- Encourage the Recommended Next Action.\n\nIf Qualification Status is \"Needs More Information\":\n\n- Thank the customer.\n- Politely explain that additional information is required.\n- Ask concise follow-up questions relevant to the enquiry.\n- Avoid making assumptions.\n\nIf Qualification Status is \"Unqualified\":\n\n- Thank the customer.\n- Politely acknowledge the enquiry.\n- Do not promise consultations, proposals or demos.\n\n====================================================\nSALES INTELLIGENCE RULES\n====================================================\n\nIf Sales Priority is High:\n\nMention that the team will prioritize reviewing the enquiry.\n\nIf Sales Priority is Medium:\n\nMention that the team will review the enquiry shortly.\n\nIf Sales Priority is Low:\n\nSimply acknowledge receipt without implying urgency.\n\nIf Follow Up Required is true:\n\nEncourage the customer to reply so the team can continue the discussion.\n\nIf Sales Recommendation is:\n\nSchedule Consultation\n→ Invite the customer to arrange a consultation.\n\nSchedule Demo\n→ Invite the customer to arrange a product demonstration.\n\nAssign Sales Representative\n→ Inform the customer that an appropriate team member will review the enquiry and reach out if needed.\n\nSend Proposal\n→ Mention that a proposal will be prepared after reviewing the requirements.\n\nSend Pricing\n→ Mention that pricing details will be shared after reviewing the request.\n\nRequest More Information\n→ Politely ask for the missing information.\n\nFollow Up Later\n→ Thank the customer and explain that the team will reconnect at the appropriate time.\n\n====================================================\nIMPORTANT RULES\n====================================================\n\nThe email must work for ANY business domain.\n\nNever assume the business type.\n\nNever invent services.\n\nNever invent company information.\n\nNever invent phone numbers.\n\nNever invent websites.\n\nNever invent booking links.\n\nNever mention AI analysis, lead scores, sales priorities or internal business evaluations.\n\nNever use placeholders such as:\n\n[Company Name]\n\n[Phone Number]\n\n[Website]\n\nKeep the email natural, concise and conversational.\n\nDo not use markdown.\n\nDo not use bullet points.\n\nAvoid sounding robotic or overly promotional.\n\n====================================================\nOUTPUT FORMAT\n====================================================\n\nReturn ONLY the email body.\n\nDo NOT include:\n\n- Subject line\n- JSON\n- Markdown\n- Code blocks\n- Explanations"
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 3.1,
+        "position": [
+          1920,
+          192
+        ],
+        "id": "7d500402-5b69-46ec-a993-b7ac540de6ff",
+        "name": "AI Agent1"
+      },
+      {
+        "parameters": {
+          "model": {
+            "__rl": true,
+            "value": "openai/gpt-oss-120b",
+            "mode": "list",
+            "cachedResultName": "openai/gpt-oss-120b"
+          },
+          "builtInTools": {},
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+        "typeVersion": 1.3,
+        "position": [
+          1888,
+          368
+        ],
+        "id": "55dddeff-41ac-4ffa-9f79-014c37a88f39",
+        "name": "OpenAI Chat Model1",
+        "credentials": {
+          "openAiApi": {
+            "id": "ElpSuTJcjmLFzmqr",
+            "name": "OpenAI account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const signature = \"\\n\\nBest regards,\\n\\nSupport Team\";\nreturn {\n  to: $('Code').first().json.email,\n  subject: \"We've received your enquiry\",\n  email_body: $json.output,\n  status: \"Email Ready\",\n  sent_at: new Date().toISOString()\n};"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2208,
+          176
+        ],
+        "id": "e4563c12-e0de-45a8-92c5-3baff1618176",
+        "name": "Code in JavaScript2"
+      },
+      {
+        "parameters": {
+          "jsCode": "// Parse AI response safely\nlet qualification = {};\n\ntry {\n  qualification = JSON.parse($json.output);\n} catch (error) {\n  qualification = {\n    lead_summary: \"Unknown\",\n    intent: \"Unknown\",\n    category: \"Unknown\",\n    pain_point: \"Unknown\",\n    urgency: \"Unknown\",\n    sentiment: \"Unknown\",\n    confidence: 0,\n    qualification_status: \"Needs More Information\",\n    next_action: \"Request More Information\"\n  };\n}\n\nreturn {\n  response_id: Date.now(),\n  lead_id: $json.id,\n\n  // Original Lead Data\n  name: $json.name,\n  email: $json.email,\n  message: $json.message,\n\n  // AI Qualification Data\n  lead_summary: qualification.lead_summary,\n  intent: qualification.intent,\n  category: qualification.category,\n  pain_point: qualification.pain_point,\n  urgency: qualification.urgency,\n  sentiment: qualification.sentiment,\n  confidence: qualification.confidence,\n  qualification_status: qualification.qualification_status,\n  next_action: qualification.next_action,\n\n  // Workflow Metadata\n  status: \"Qualified\",\n  created_at: new Date().toISOString()\n};"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          992,
+          -48
+        ],
+        "id": "52ff6868-1c4c-4a99-8346-4d5493b9dbaa",
+        "name": "Code"
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "=Evaluate the following qualified lead and generate a sales intelligence report.\n\nLead Name:\n{{$json.name}}\n\nLead Summary:\n{{$json.lead_summary}}\n\nIntent:\n{{$json.intent}}\n\nCategory:\n{{$json.category}}\n\nPain Point:\n{{$json.pain_point}}\n\nUrgency:\n{{$json.urgency}}\n\nSentiment:\n{{$json.sentiment}}\n\nConfidence:\n{{$json.confidence}}\n\nQualification Status:\n{{$json.qualification_status}}\n\nRecommended Next Action:\n{{$json.next_action}}\n\nReturn the sales intelligence report.",
+          "options": {
+            "systemMessage": "You are an AI Sales Intelligence Assistant.\n\nYour responsibility is to evaluate already qualified leads and generate actionable sales intelligence that helps businesses prioritize follow-ups.\n\nThe lead has already been qualified by another AI system.\n\nDO NOT repeat lead qualification tasks such as:\n- Intent Detection\n- Category Classification\n- Pain Point Extraction\n- Sentiment Analysis\n- Qualification Status\n\nInstead, evaluate the business value of the lead and generate a sales intelligence report.\n\n====================================================\nSCORING FRAMEWORK\n====================================================\n\nBegin with a base score of 50.\n\nAdjust the score using the following guidelines.\n\nQualification Status\n\nQualified\n+20\n\nNeeds More Information\n+5\n\nUnqualified\n+0\n\n----------------------------------------------------\n\nIntent Clarity\n\nVery clear business need or consultation request\n+10\n\nGeneral enquiry\n+5\n\nUnclear request\n+0\n\n----------------------------------------------------\n\nConfidence Score\n\n95-100\n+10\n\n80-94\n+7\n\n60-79\n+4\n\nBelow 60\n+0\n\n----------------------------------------------------\n\nUrgency\n\nHigh\n+10\n\nMedium\n+5\n\nLow\n+0\n\nUnknown\n+0\n\n----------------------------------------------------\n\nSentiment\n\nPositive\n+5\n\nNeutral\n+2\n\nNegative\n+0\n\n----------------------------------------------------\n\nProject Request Adjustment\n\nIf the Intent is \"Project Request\" and the customer is requesting a custom solution, software development, AI platform, workflow automation, enterprise automation, or similar implementation:\n\n- Treat it as a potentially valuable opportunity.\n- Increase Opportunity Level when appropriate.\n- Do NOT automatically assign a High Lead Score.\n- Keep the score consistent with Qualification Status, Confidence and Urgency.\n\n----------------------------------------------------\n\nClamp the final Lead Score between 0 and 100.\n\n====================================================\nFIELDS TO GENERATE\n====================================================\n\n1. lead_score\n\nReturn the calculated Lead Score as an integer.\n\n----------------------------------------------------\n\n2. lead_temperature\n\nChoose ONLY one.\n\nHot\nWarm\nCold\n\nRules\n\nHot\n85-100\n\nWarm\n60-84\n\nCold\n0-59\n\n----------------------------------------------------\n\n3. sales_priority\n\nChoose ONLY one.\n\nHigh\nMedium\nLow\n\nRules\n\nHigh\nLead Score >= 85\n\nMedium\nLead Score 60-84\n\nLow\nLead Score below 60\n\n----------------------------------------------------\n\n4. conversion_probability\n\nChoose ONLY one.\n\nHigh\nMedium\nLow\n\nRules\n\nHigh\nLead Score >= 85\n\nMedium\nLead Score 60-84\n\nLow\nLead Score below 60\n\n----------------------------------------------------\n\n5. response_time\n\nChoose ONLY one.\n\nImmediately\n\nWithin 2 Hours\n\nWithin 24 Hours\n\nWithin This Week\n\nRules\n\nLead Score >= 90\nImmediately\n\nLead Score 80-89\nWithin 2 Hours\n\nLead Score 60-79\nWithin 24 Hours\n\nBelow 60\nWithin This Week\n\n----------------------------------------------------\n\n6. opportunity_level\n\nChoose ONLY one.\n\nHigh\nMedium\nLow\n\nRules\n\nHigh\nLead Score >= 85\n\nMedium\nLead Score 60-84\n\nLow\nLead Score below 60\n\n----------------------------------------------------\n\n7. sales_recommendation\n\nChoose ONLY one.\n\nSchedule Consultation\n\nSchedule Demo\n\nAssign Sales Representative\n\nSend Proposal\n\nSend Pricing\n\nRequest More Information\n\nFollow Up Later\n\nRules\n\nCareer Consultation\n→ Schedule Consultation\n\nProduct Inquiry\n→ Send Pricing\n\nService Inquiry\n→ Schedule Demo\n\nProject Request\n→ Assign Sales Representative\n\nPricing Inquiry\n→ Send Pricing\n\nTechnical Support\n→ Assign Sales Representative\n\nGeneral Question\n→ Request More Information\n\n----------------------------------------------------\n\n8. follow_up_required\n\nReturn ONLY a boolean value.\n\nRules\n\ntrue\n\n- High Sales Priority\n- Medium Sales Priority\n- Qualified\n- Needs More Information\n\nfalse\n\n- Low Sales Priority\n- Unqualified\n\n====================================================\nIMPORTANT RULES\n====================================================\n\nUse ONLY the information supplied.\n\nNever invent customer information.\n\nNever contradict the qualification results.\n\nBe internally consistent.\n\nExamples of INVALID combinations:\n\n❌ Lead Score: 92\nSales Priority: Low\n\n❌ Lead Score: 95\nResponse Time: Within This Week\n\n❌ Lead Score: 90\nConversion Probability: Low\n\n❌ Lead Temperature: Hot\nOpportunity Level: Low\n\n❌ Qualification Status: Unqualified\nLead Score: 95\n\nIf one field changes, ensure all dependent fields remain logically consistent.\n\n====================================================\nOUTPUT FORMAT\n====================================================\n\nReturn ONLY valid JSON.\n\nDo NOT return markdown.\n\nDo NOT return explanations.\n\nDo NOT return code blocks.\n\nReturn exactly this structure.\n\n{\n  \"lead_score\": 0,\n  \"lead_temperature\": \"\",\n  \"sales_priority\": \"\",\n  \"conversion_probability\": \"\",\n  \"response_time\": \"\",\n  \"opportunity_level\": \"\",\n  \"sales_recommendation\": \"\",\n  \"follow_up_required\": true\n}"
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 3.1,
+        "position": [
+          896,
+          336
+        ],
+        "id": "383f3abd-8d43-42b5-bf06-a306b0f66475",
+        "name": "AI Agent2"
+      },
+      {
+        "parameters": {
+          "model": {
+            "__rl": true,
+            "value": "openai/gpt-oss-120b",
+            "mode": "list",
+            "cachedResultName": "openai/gpt-oss-120b"
+          },
+          "builtInTools": {},
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+        "typeVersion": 1.3,
+        "position": [
+          800,
+          512
+        ],
+        "id": "0e4e03fd-afdf-4ef3-8277-59a12fbb34e2",
+        "name": "OpenAI Chat Model2",
+        "credentials": {
+          "openAiApi": {
+            "id": "ElpSuTJcjmLFzmqr",
+            "name": "OpenAI account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "// Parse AI Sales Intelligence response safely\nlet sales = {};\n\ntry {\n  sales = JSON.parse($json.output);\n} catch (error) {\n  sales = {\n    lead_score: 0,\n    lead_temperature: \"Unknown\",\n    sales_priority: \"Unknown\",\n    conversion_probability: \"Unknown\",\n    response_time: \"Unknown\",\n    opportunity_level: \"Unknown\",\n    sales_recommendation: \"Unknown\",\n    follow_up_required: false\n  };\n}\n\n// Get data from the previous Qualification Code Node\nconst lead = $('Code').first().json;\n\n// Return merged object\nreturn {\n  // Existing Lead Information\n  response_id: lead.response_id,\n  lead_id: lead.lead_id,\n  name: lead.name,\n  email: lead.email,\n  message: lead.message,\n\n  // Qualification Information\n  lead_summary: lead.lead_summary,\n  intent: lead.intent,\n  category: lead.category,\n  pain_point: lead.pain_point,\n  urgency: lead.urgency,\n  sentiment: lead.sentiment,\n  confidence: lead.confidence,\n  qualification_status: lead.qualification_status,\n  next_action: lead.next_action,\n\n  // Sales Intelligence\n  lead_score: sales.lead_score,\n  lead_temperature: sales.lead_temperature,\n  sales_priority: sales.sales_priority,\n  conversion_probability: sales.conversion_probability,\n  response_time: sales.response_time,\n  opportunity_level: sales.opportunity_level,\n  sales_recommendation: sales.sales_recommendation,\n  follow_up_required: sales.follow_up_required,\n\n  // Workflow Metadata\n  status: \"Sales Ready\",\n  created_at: lead.created_at,\n  updated_at: new Date().toISOString()\n};"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1232,
+          384
+        ],
+        "id": "d53651c4-109e-4ef8-81ff-aa66e9f244f1",
+        "name": "Code in JavaScript1"
+      },
+      {
+        "parameters": {
+          "jsCode": "// ========================================\n// AI CRM & Follow-up Automation\n// Part 4 - Production Version\n// ========================================\n\n// Clone incoming lead data\nconst lead = { ...$json };\n\n// Current date\nconst today = new Date();\nconst followUpDate = new Date(today);\n\n// Default CRM values\nlet crmStatus = \"Pending Review\";\nlet assignedTo = \"Sales Queue\";\nlet lastAction = \"CRM Record Created\";\nlet notificationRequired = false;\n\n// ========================================\n// CRM BUSINESS LOGIC\n// ========================================\n\nswitch (lead.sales_priority) {\n\n  case \"High\":\n    crmStatus = \"Pending Contact\";\n    assignedTo = \"Sales Team\";\n    followUpDate.setDate(today.getDate()); // Today\n    notificationRequired = true;\n    break;\n\n  case \"Medium\":\n    crmStatus = \"Follow-up Scheduled\";\n    assignedTo = \"Sales Queue\";\n    followUpDate.setDate(today.getDate() + 1); // Tomorrow\n    notificationRequired = true;\n    break;\n\n  case \"Low\":\n    crmStatus = \"Lead Nurturing\";\n    assignedTo = \"Marketing Queue\";\n    followUpDate.setDate(today.getDate() + 3);\n    notificationRequired = false;\n    break;\n\n  default:\n    crmStatus = \"Pending Review\";\n    assignedTo = \"Sales Queue\";\n    followUpDate.setDate(today.getDate() + 2);\n    notificationRequired = false;\n}\n\n// ========================================\n// FOLLOW-UP CHECK\n// ========================================\n\nif (lead.follow_up_required === false) {\n  crmStatus = \"No Follow-up Required\";\n  notificationRequired = false;\n}\n\n// ========================================\n// INTERNAL CRM NOTES\n// ========================================\n\nconst internalNotes =\n`Lead Summary: ${lead.lead_summary}\n\nIntent: ${lead.intent}\nCategory: ${lead.category}\n\nLead Score: ${lead.lead_score}\nLead Temperature: ${lead.lead_temperature}\n\nSales Priority: ${lead.sales_priority}\nOpportunity Level: ${lead.opportunity_level}\n\nRecommendation: ${lead.sales_recommendation}\n\nFollow-up Required: ${lead.follow_up_required ? \"Yes\" : \"No\"}`;\n\n// ========================================\n// RETURN FINAL CRM RECORD\n// ========================================\n\nreturn {\n\n  // Existing Lead Information\n  ...lead,\n\n  // CRM Automation\n  crm_status: crmStatus,\n  assigned_to: assignedTo,\n  follow_up_date: followUpDate.toISOString().split(\"T\")[0],\n  last_action: lastAction,\n  internal_notes: internalNotes,\n  notification_required: notificationRequired,\n\n  // Workflow Status\n  status: \"CRM Updated\",\n  crm_updated_at: new Date().toISOString()\n\n};"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1472,
+          400
+        ],
+        "id": "520e5990-bb1e-4800-940a-23d14a612336",
+        "name": "Code in JavaScript3"
+      },
+      {
+        "parameters": {
+          "operation": "append",
+          "documentId": {
+            "__rl": true,
+            "value": "YOUR_GOOGLE_SHEET_ID_HERE",
+            "mode": "list",
+            "cachedResultName": "Day-1 N8n",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID_HERE/edit?usp=drivesdk"
+          },
+          "sheetName": {
+            "__rl": true,
+            "value": 868659410,
+            "mode": "list",
+            "cachedResultName": "CRM forms",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID_HERE/edit#gid=868659410"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "CRM Status": "={{ $json.crm_status }}",
+              "Assigned To": "={{ $json.assigned_to }}",
+              "Follow-up Date": "={{ $json.follow_up_date }}",
+              "Last Action": "={{ $json.last_action }}",
+              "Internal Notes": "={{ $json.internal_notes }}",
+              "Notification Required": "={{ $json.notification_required }}",
+              "CRM Updated At": "={{ $json.crm_updated_at }}"
+            },
+            "matchingColumns": [],
+            "schema": [
+              {
+                "id": "CRM Status",
+                "displayName": "CRM Status",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "Assigned To",
+                "displayName": "Assigned To",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "Follow-up Date",
+                "displayName": "Follow-up Date",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "Last Action",
+                "displayName": "Last Action",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "Internal Notes",
+                "displayName": "Internal Notes",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "Notification Required",
+                "displayName": "Notification Required",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "CRM Updated At",
+                "displayName": "CRM Updated At",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.googleSheets",
+        "typeVersion": 4.7,
+        "position": [
+          1680,
+          432
+        ],
+        "id": "f1393c17-0697-4a61-b2a0-f8468d05f2f2",
+        "name": "Append row in sheet2",
+        "credentials": {
+          "googleSheetsOAuth2Api": {
+            "id": "XUo0YZXw282TEr36",
+            "name": "Google Sheets account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "mode": "combine",
+          "combineBy": "combineByPosition",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.merge",
+        "typeVersion": 3.2,
+        "position": [
+          1488,
+          -80
+        ],
+        "id": "f7898296-05ce-4ff1-93e4-1bee80590bf7",
+        "name": "Merge1"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "b63fd6af-60fb-45c9-b3be-a546ac5f8b04",
+                "leftValue": "={{ $json[\"Notification Required\"] }}",
+                "rightValue": false,
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          1696,
+          -80
+        ],
+        "id": "6e51d560-7234-481d-a7c7-329c9bc0f20c",
+        "name": "If"
+      },
+      {
+        "parameters": {
+          "sendTo": "your-email@example.com",
+          "subject": "=🚨 {{$json[\"Sales Priority\"]}} Priority Lead - {{$json.name}}",
+          "emailType": "text",
+          "message": "=🚨 New Lead Requires Attention  A new lead has been evaluated and is ready for follow-up. \n━━━━━━━━━━━━━━━━━━━━━━ 👤 Customer Details ━━━━━━━━━━━━━━━━━━━━━━ \nName: {{$json.name}}\nEmail: {{$json.email}}\n━━━━━━━━━━━━━━━━━━━━━━ 📝 Lead Information ━━━━━━━━━━━━━━━━━━━━━━ \nIntent: {{$json.Intent}}\nCategory: {{$json.Category}}\nPain Point: {{$json[\"Pain Point\"]}}\n━━━━━━━━━━━━━━━━━━━━━━ 📊 Sales Intelligence ━━━━━━━━━━━━━━━━━━━━━━  \nLead Score: {{$json[\"Lead Score\"]}} \nLead Temperature: {{$json[\"Lead Temperature\"]}} \nSales Priority: {{$json[\"Sales Priority\"]}}\nConversion Probability: {{$json[\"Conversion Probability\"]}}\nOpportunity Level: {{$json[\"Opportunity Level\"]}}\n━━━━━━━━━━━━━━━━━━━━━━ 🏢 CRM Information ━━━━━━━━━━━━━━━━━━━━━━\nCRM Status: {{$json[\"CRM Status\"]}}\nAssigned To: {{$json[\"Assigned To\"]}} \nFollow-up Date: {{$json[\"Follow-up Date\"]}} \nSales Recommendation: {{$json[\"Sales Recommendation\"]}} \n━━━━━━━━━━━━━━━━━━━━━━ 📌 Internal Notes ━━━━━━━━━━━━━━━━━━━━━━ \n{{$json[\"Internal Notes\"]}}\n━━━━━━━━━━━━━━━━━━━━━━ \nPlease review this lead and take the recommended next action.  This notification was generated automatically by the AI CRM Automation workflow.",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.2,
+        "position": [
+          2176,
+          -128
+        ],
+        "id": "a6fcf862-a2c2-417b-8891-0755d96b5dc0",
+        "name": "Send a message1",
+        "webhookId": "283a1e33-9809-42af-b652-5550365b8496",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "dJo19xe1bVod4Y6k",
+            "name": "Gmail account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "mode": "combine",
+          "combineBy": "combineByPosition",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.merge",
+        "typeVersion": 3.2,
+        "position": [
+          1952,
+          -304
+        ],
+        "id": "d821fb02-379f-45db-93a6-c6775db9ab5c",
+        "name": "Merge2"
+      }
+    ],
+    "connections": {
+      "Webhook": {
+        "main": [
+          [
+            {
+              "node": "Edit Fields",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Edit Fields": {
+        "main": [
+          [
+            {
+              "node": "Code in JavaScript",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Code in JavaScript": {
+        "main": [
+          [
+            {
+              "node": "Append row in sheet",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Merge",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Send a message": {
+        "main": [
+          []
+        ]
+      },
+      "Append row in sheet": {
+        "main": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "AI Agent": {
+        "main": [
+          [
+            {
+              "node": "Merge",
+              "type": "main",
+              "index": 1
+            }
+          ]
+        ]
+      },
+      "OpenAI Chat Model": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Merge": {
+        "main": [
+          [
+            {
+              "node": "Code",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Append row in sheet1": {
+        "main": [
+          [
+            {
+              "node": "Merge1",
+              "type": "main",
+              "index": 1
+            }
+          ]
+        ]
+      },
+      "AI Agent1": {
+        "main": [
+          [
+            {
+              "node": "Code in JavaScript2",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "OpenAI Chat Model1": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "AI Agent1",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Code": {
+        "main": [
+          [
+            {
+              "node": "AI Agent2",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Code in JavaScript2": {
+        "main": [
+          [
+            {
+              "node": "Send a message",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "OpenAI Chat Model2": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "AI Agent2",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "AI Agent2": {
+        "main": [
+          [
+            {
+              "node": "Code in JavaScript1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Code in JavaScript1": {
+        "main": [
+          [
+            {
+              "node": "Code in JavaScript3",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Append row in sheet1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Code in JavaScript3": {
+        "main": [
+          [
+            {
+              "node": "Append row in sheet2",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Append row in sheet2": {
+        "main": [
+          [
+            {
+              "node": "Merge1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Merge1": {
+        "main": [
+          [
+            {
+              "node": "If",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Merge2",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "If": {
+        "main": [
+          [
+            {
+              "node": "Send a message1",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "AI Agent1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Send a message1": {
+        "main": [
+          [
+            {
+              "node": "Merge2",
+              "type": "main",
+              "index": 1
+            }
+          ]
+        ]
+      },
+      "Merge2": {
+        "main": [
+          [
+            {
+              "node": "AI Agent1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Your Name",
+    "name": "Lead Capture- Auto Response System",
+    "description": "Added CRM features",
+    "autosaved": true,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-08-06T14:06:20.151Z",
+        "id": 95,
+        "workflowId": "QJuF5L7xYAo60fXx",
+        "versionId": "9f10b8fd-477f-4078-8611-50714d6c3609",
+        "event": "activated",
+        "userId": "8d994dc9-eaab-443f-93bf-ef4aa823f36d"
+      }
+    ]
+  },
+  "scopes": [
+    "execution:reveal",
+    "workflow:create",
+    "workflow:delete",
+    "workflow:disableRedaction",
+    "workflow:enableRedaction",
+    "workflow:execute",
+    "workflow:execute-chat",
+    "workflow:export",
+    "workflow:list",
+    "workflow:move",
+    "workflow:publish",
+    "workflow:read",
+    "workflow:share",
+    "workflow:unpublish",
+    "workflow:unshare",
+    "workflow:update"
+  ],
+  "checksum": "612dd305dae48209a1a2917a177d452215bf2fdbb969f2c63b79c30da306511b"
+}
