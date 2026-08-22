@@ -19,7 +19,22 @@
 
 ## 🔥 Workflows
 
-### 🤖 AI Lead Management & Sales Automation Series (NEW 🔥)
+### 🤖 AI Quote Generator — Professional Business Quotation Automation (NEW 🔥)
+
+An end-to-end business quotation automation built with n8n. The AI Quote Generator automates the complete quotation lifecycle — from receiving a quote request to generating a professional PDF, delivering it to the customer, tracking interactions, handling acceptance or rejection, and automatically sending follow-up emails.
+
+✨ **Features:**
+- 📄 Automated quotation PDF generation and Google Drive storage
+- 👀 Customer interaction tracking (View, Accept, Reject)
+- 🔁 Automated follow-up email sequences
+- 📊 Google Sheets integration for quote tracking
+- 📧 Dynamic email delivery via Gmail
+
+📁 **Folder:** [AI Quote Generator — Professional Business Quotation Automation](./workflows/AI%20Quote%20Generator%20%E2%80%94%20Professional%20Business%20Quotation%20Automation/)
+
+---
+
+### 🤖 AI Lead Management & Sales Automation Series
 
 An end-to-end AI-powered lead management and sales automation workflow built with n8n, AI agents, Google Sheets, Gmail, JavaScript, and Webhooks.
 
@@ -237,6 +252,7 @@ Automatically monitor competitor websites, detect business changes, and receive 
 
 ```bash
 ai-automation-workflows/
+├── workflows/AI Quote Generator — Professional Business Quotation Automation/
 ├── workflows/ai-lead-management-automation/
 ├── workflows/AI Receptionist Automation Series/
 ├── workflows/AI Cold Email Personalization Engine/
