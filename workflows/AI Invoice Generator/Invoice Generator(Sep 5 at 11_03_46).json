@@ -1,0 +1,2551 @@
+{
+  "updatedAt": "2026-09-05T05:33:46.511Z",
+  "createdAt": "2026-08-26T05:32:39.778Z",
+  "id": "8DDgfXcJXLwVI8TO",
+  "name": "Invoice Generator",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\n// n8n Webhook payload is normally inside `body`\nconst data = input.body ?? input;\n\nconst errors = [];\n\n// -------------------------\n// Business validation\n// -------------------------\nif (!data.business?.name?.trim()) {\n  errors.push(\"Business name is required\");\n}\n\nif (!data.business?.email?.trim()) {\n  errors.push(\"Business email is required\");\n}\n\n// -------------------------\n// Customer validation\n// -------------------------\nif (!data.customer?.name?.trim()) {\n  errors.push(\"Customer name is required\");\n}\n\nif (!data.customer?.email?.trim()) {\n  errors.push(\"Customer email is required\");\n}\n\n// Basic email validation\nconst emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;\n\nif (\n  data.business?.email &&\n  !emailRegex.test(data.business.email)\n) {\n  errors.push(\"Business email is invalid\");\n}\n\nif (\n  data.customer?.email &&\n  !emailRegex.test(data.customer.email)\n) {\n  errors.push(\"Customer email is invalid\");\n}\n\n// -------------------------\n// Invoice validation\n// -------------------------\nif (!data.invoice?.number?.trim()) {\n  errors.push(\"Invoice number is required\");\n}\n\nif (!data.invoice?.date) {\n  errors.push(\"Invoice date is required\");\n}\n\nif (!data.invoice?.currency?.trim()) {\n  errors.push(\"Currency is required\");\n}\n\n// -------------------------\n// Items validation\n// -------------------------\nif (!Array.isArray(data.items) || data.items.length === 0) {\n  errors.push(\"At least one invoice item is required\");\n} else {\n  data.items.forEach((item, index) => {\n    const itemNumber = index + 1;\n\n    if (!item.description?.trim()) {\n      errors.push(`Item ${itemNumber}: description is required`);\n    }\n\n    if (\n      typeof item.quantity !== \"number\" ||\n      !Number.isFinite(item.quantity) ||\n      item.quantity <= 0\n    ) {\n      errors.push(\n        `Item ${itemNumber}: quantity must be greater than 0`\n      );\n    }\n\n    if (\n      typeof item.unit_price !== \"number\" ||\n      !Number.isFinite(item.unit_price) ||\n      item.unit_price < 0\n    ) {\n      errors.push(\n        `Item ${itemNumber}: unit price cannot be negative`\n      );\n    }\n  });\n}\n\n// -------------------------\n// Discount validation\n// -------------------------\nif (data.discount) {\n  const discountType = data.discount.type;\n  const discountValue = data.discount.value;\n\n  if (![\"percentage\", \"fixed\"].includes(discountType)) {\n    errors.push(\n      \"Discount type must be either percentage or fixed\"\n    );\n  }\n\n  if (\n    typeof discountValue !== \"number\" ||\n    !Number.isFinite(discountValue) ||\n    discountValue < 0\n  ) {\n    errors.push(\"Discount value must be 0 or greater\");\n  }\n\n  if (\n    discountType === \"percentage\" &&\n    discountValue > 100\n  ) {\n    errors.push(\"Discount percentage cannot exceed 100\");\n  }\n}\n\n// -------------------------\n// Tax validation\n// -------------------------\nif (data.tax) {\n  const taxType = data.tax.type;\n  const taxValue = data.tax.value;\n\n  if (![\"percentage\", \"fixed\"].includes(taxType)) {\n    errors.push(\n      \"Tax type must be either percentage or fixed\"\n    );\n  }\n\n  if (\n    typeof taxValue !== \"number\" ||\n    !Number.isFinite(taxValue) ||\n    taxValue < 0\n  ) {\n    errors.push(\"Tax value must be 0 or greater\");\n  }\n\n  if (\n    taxType === \"percentage\" &&\n    taxValue > 100\n  ) {\n    errors.push(\"Tax percentage cannot exceed 100\");\n  }\n}\n\n// -------------------------\n// Final response\n// -------------------------\nif (errors.length > 0) {\n  return [\n    {\n      json: {\n        success: false,\n        valid: false,\n        error: \"Invalid invoice data\",\n        details: errors\n      }\n    }\n  ];\n}\n\n// Valid input\nreturn [\n  {\n    json: {\n      success: true,\n      valid: true,\n      data\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "75676487-9654-4896-b2a5-a29db302257f",
+      "name": "Validate Invoice Input"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\nconst data = input.data;\n\n// Generate a clean internal invoice structure\nconst invoice = {\n  invoiceNumber: data.invoice.number,\n  invoiceDate: data.invoice.date,\n  dueDate: data.invoice.due_date ?? null,\n  currency: data.invoice.currency,\n\n  business: {\n    name: data.business.name,\n    email: data.business.email,\n    phone: data.business.phone ?? null,\n    address: data.business.address ?? null,\n    taxId: data.business.tax_id ?? null\n  },\n\n  customer: {\n    name: data.customer.name,\n    email: data.customer.email,\n    phone: data.customer.phone ?? null,\n    address: data.customer.address ?? null\n  },\n\n  items: data.items.map(item => ({\n    description: item.description,\n    quantity: Number(item.quantity),\n    unitPrice: Number(item.unit_price)\n  })),\n\n  discount: {\n    type: data.discount?.type ?? \"percentage\",\n    value: Number(data.discount?.value ?? 0)\n  },\n\n  tax: {\n    type: data.tax?.type ?? \"percentage\",\n    value: Number(data.tax?.value ?? 0)\n  },\n\n  notes: data.notes ?? null\n};\n\nreturn [\n  {\n    json: {\n      success: true,\n      invoice\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "7c6a3e82-837a-4a6c-aceb-2a677c249d97",
+      "name": "Normalize Invoice Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst invoice = input.invoice;\n\n// --------------------------------------------------\n// Helper: round monetary values to 2 decimal places\n// --------------------------------------------------\nfunction roundMoney(value) {\n  return Math.round((value + Number.EPSILON) * 100) / 100;\n}\n\n// --------------------------------------------------\n// Calculate line items\n// --------------------------------------------------\nconst calculatedItems = invoice.items.map((item, index) => {\n  const quantity = Number(item.quantity);\n  const unitPrice = Number(item.unitPrice);\n\n  const lineTotal = roundMoney(quantity * unitPrice);\n\n  return {\n    itemNumber: index + 1,\n    description: item.description,\n    quantity,\n    unitPrice,\n    lineTotal\n  };\n});\n\n// --------------------------------------------------\n// Subtotal\n// --------------------------------------------------\nconst subtotal = roundMoney(\n  calculatedItems.reduce(\n    (sum, item) => sum + item.lineTotal,\n    0\n  )\n);\n\n// --------------------------------------------------\n// Discount\n// --------------------------------------------------\nlet discountAmount = 0;\n\nif (invoice.discount?.type === \"percentage\") {\n  discountAmount = roundMoney(\n    subtotal * (Number(invoice.discount.value) / 100)\n  );\n}\n\nif (invoice.discount?.type === \"fixed\") {\n  discountAmount = roundMoney(\n    Number(invoice.discount.value)\n  );\n}\n\n// Prevent discount from exceeding subtotal\ndiscountAmount = Math.min(discountAmount, subtotal);\n\n// --------------------------------------------------\n// Taxable amount\n// --------------------------------------------------\nconst taxableAmount = roundMoney(\n  subtotal - discountAmount\n);\n\n// --------------------------------------------------\n// Tax\n// --------------------------------------------------\nlet taxAmount = 0;\n\nif (invoice.tax?.type === \"percentage\") {\n  taxAmount = roundMoney(\n    taxableAmount * (Number(invoice.tax.value) / 100)\n  );\n}\n\nif (invoice.tax?.type === \"fixed\") {\n  taxAmount = roundMoney(\n    Number(invoice.tax.value)\n  );\n}\n\n// --------------------------------------------------\n// Grand total\n// --------------------------------------------------\nconst grandTotal = roundMoney(\n  taxableAmount + taxAmount\n);\n\n// --------------------------------------------------\n// Final output\n// --------------------------------------------------\nreturn [\n  {\n    json: {\n      success: true,\n\n      invoice: {\n        ...invoice,\n\n        items: calculatedItems,\n\n        calculations: {\n          subtotal,\n          discountAmount,\n          taxableAmount,\n          taxAmount,\n          grandTotal,\n          amountDue: grandTotal\n        }\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "42e17430-c522-4ca7-9203-0fcfcbe58e92",
+      "name": "Calculate Invoice"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "invoice/generate",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "4addf599-1376-4e84-b52f-b86fedc15dda",
+      "name": "Invoice Request",
+      "webhookId": "7cb1ed40-0808-4657-9beb-fc820e3dad95"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst invoice = input.invoice;\n\nconst currency = invoice.currency || \"INR\";\n\n// --------------------------------------------------\n// Currency formatter\n// --------------------------------------------------\nfunction formatCurrency(value) {\n  return new Intl.NumberFormat(\"en-IN\", {\n    style: \"currency\",\n    currency: currency,\n    minimumFractionDigits: 2,\n    maximumFractionDigits: 2\n  }).format(Number(value || 0));\n}\n\n// --------------------------------------------------\n// Date formatter\n// --------------------------------------------------\nfunction formatDate(date) {\n  if (!date) return \"-\";\n\n  const parsedDate = new Date(date);\n\n  if (Number.isNaN(parsedDate.getTime())) {\n    return \"-\";\n  }\n\n  return new Intl.DateTimeFormat(\"en-IN\", {\n    day: \"2-digit\",\n    month: \"short\",\n    year: \"numeric\"\n  }).format(parsedDate);\n}\n\n// --------------------------------------------------\n// Escape HTML\n// Prevent user-provided values from breaking HTML\n// --------------------------------------------------\nfunction escapeHTML(value) {\n  return String(value ?? \"\")\n    .replace(/&/g, \"&amp;\")\n    .replace(/</g, \"&lt;\")\n    .replace(/>/g, \"&gt;\")\n    .replace(/\"/g, \"&quot;\")\n    .replace(/'/g, \"&#039;\");\n}\n\n// --------------------------------------------------\n// Generate item rows\n// --------------------------------------------------\nconst itemRows = invoice.items\n  .map((item) => {\n    return `\n      <tr>\n        <td class=\"description-cell\">\n          <div class=\"item-name\">\n            ${escapeHTML(item.description)}\n          </div>\n        </td>\n\n        <td class=\"center\">\n          ${escapeHTML(item.quantity)}\n        </td>\n\n        <td class=\"right\">\n          ${formatCurrency(item.unitPrice)}\n        </td>\n\n        <td class=\"right\">\n          ${formatCurrency(item.lineTotal)}\n        </td>\n      </tr>\n    `;\n  })\n  .join(\"\");\n\n// --------------------------------------------------\n// Discount label\n// --------------------------------------------------\nlet discountLabel = \"Discount\";\n\nif (invoice.discount?.type === \"percentage\") {\n  discountLabel = `Discount (${escapeHTML(invoice.discount.value)}%)`;\n}\n\n// --------------------------------------------------\n// Tax label\n// --------------------------------------------------\nlet taxLabel = \"Tax\";\n\nif (invoice.tax?.type === \"percentage\") {\n  taxLabel = `Tax (${escapeHTML(invoice.tax.value)}%)`;\n}\n\n// --------------------------------------------------\n// Optional business information\n// --------------------------------------------------\nconst businessAddress = invoice.business.address\n  ? escapeHTML(invoice.business.address)\n  : \"\";\n\nconst businessEmail = invoice.business.email\n  ? escapeHTML(invoice.business.email)\n  : \"\";\n\nconst businessPhone = invoice.business.phone\n  ? escapeHTML(invoice.business.phone)\n  : \"\";\n\nconst businessTaxId = invoice.business.taxId\n  ? escapeHTML(invoice.business.taxId)\n  : \"\";\n\nconst customerAddress = invoice.customer.address\n  ? escapeHTML(invoice.customer.address)\n  : \"\";\n\nconst customerEmail = invoice.customer.email\n  ? escapeHTML(invoice.customer.email)\n  : \"\";\n\nconst customerPhone = invoice.customer.phone\n  ? escapeHTML(invoice.customer.phone)\n  : \"\";\n\n// --------------------------------------------------\n// Generate complete invoice HTML\n// --------------------------------------------------\nconst html = `\n<!DOCTYPE html>\n<html lang=\"en\">\n\n<head>\n\n<meta charset=\"UTF-8\">\n\n<meta\n  name=\"viewport\"\n  content=\"width=device-width, initial-scale=1.0\"\n>\n\n<title>\n  Invoice ${escapeHTML(invoice.invoiceNumber)}\n</title>\n\n<style>\n\n/* ==================================================\n   GLOBAL\n   ================================================== */\n\n* {\n  box-sizing: border-box;\n}\n\nhtml,\nbody {\n  margin: 0;\n  padding: 0;\n  width: 100%;\n  background: #ffffff;\n}\n\nbody {\n  font-family:\n    Arial,\n    Helvetica,\n    sans-serif;\n\n  color: #1f2937;\n\n  -webkit-print-color-adjust: exact;\n  print-color-adjust: exact;\n}\n\n/* ==================================================\n   PAGE\n   ================================================== */\n\n@page {\n  size: A4;\n  margin: 0;\n}\n\n/*\n  Important:\n  Do NOT use min-height: 297mm here.\n\n  The previous version used:\n    min-height: 297mm\n    margin: 20px auto\n\n  which could force the renderer to create\n  an unnecessary second page.\n*/\n\n.invoice-container {\n  width: 210mm;\n\n  margin: 0 auto;\n\n  padding:\n    15mm\n    18mm\n    12mm\n    18mm;\n\n  background: #ffffff;\n\n  position: relative;\n\n  overflow: visible;\n}\n\n/* ==================================================\n   HEADER\n   ================================================== */\n\n.header {\n  display: flex;\n\n  justify-content: space-between;\n\n  align-items: flex-start;\n\n  padding-bottom: 20px;\n\n  border-bottom: 2px solid #111827;\n\n  break-inside: avoid;\n  page-break-inside: avoid;\n}\n\n.business-name {\n  font-size: 28px;\n\n  font-weight: 700;\n\n  color: #111827;\n\n  margin-bottom: 7px;\n}\n\n.business-details {\n  font-size: 11px;\n\n  line-height: 1.55;\n\n  color: #6b7280;\n}\n\n.invoice-title {\n  text-align: right;\n\n  flex-shrink: 0;\n\n  margin-left: 20px;\n}\n\n.invoice-title h1 {\n  margin: 0;\n\n  font-size: 32px;\n\n  line-height: 1;\n\n  letter-spacing: 2px;\n\n  color: #111827;\n}\n\n.invoice-number {\n  margin-top: 8px;\n\n  font-size: 12px;\n\n  color: #6b7280;\n}\n\n/* ==================================================\n   CUSTOMER + INVOICE META\n   ================================================== */\n\n.meta-section {\n  display: flex;\n\n  justify-content: space-between;\n\n  align-items: flex-start;\n\n  margin-top: 25px;\n\n  margin-bottom: 28px;\n\n  break-inside: avoid;\n  page-break-inside: avoid;\n}\n\n.customer-section {\n  width: 55%;\n\n  padding-right: 20px;\n}\n\n.customer-label {\n  font-size: 10px;\n\n  font-weight: 700;\n\n  letter-spacing: 1px;\n\n  color: #6b7280;\n\n  text-transform: uppercase;\n\n  margin-bottom: 7px;\n}\n\n.customer-name {\n  font-size: 15px;\n\n  font-weight: 700;\n\n  color: #111827;\n\n  margin-bottom: 4px;\n}\n\n.customer-details {\n  font-size: 11px;\n\n  line-height: 1.55;\n\n  color: #6b7280;\n}\n\n.invoice-meta {\n  width: 40%;\n}\n\n.meta-row {\n  display: flex;\n\n  justify-content: space-between;\n\n  align-items: baseline;\n\n  margin-bottom: 7px;\n\n  font-size: 11px;\n\n  gap: 15px;\n}\n\n.meta-label {\n  color: #6b7280;\n}\n\n.meta-value {\n  font-weight: 600;\n\n  color: #111827;\n\n  text-align: right;\n}\n\n/* ==================================================\n   ITEMS TABLE\n   ================================================== */\n\n.items-table {\n  width: 100%;\n\n  border-collapse: collapse;\n\n  margin-top: 5px;\n\n  table-layout: fixed;\n\n  break-inside: auto;\n  page-break-inside: auto;\n}\n\n.items-table thead {\n  background: #111827;\n\n  color: #ffffff;\n\n  display: table-header-group;\n}\n\n.items-table tr {\n  break-inside: avoid;\n  page-break-inside: avoid;\n}\n\n.items-table th {\n  padding: 10px 9px;\n\n  font-size: 10px;\n\n  text-transform: uppercase;\n\n  letter-spacing: 0.5px;\n\n  text-align: left;\n}\n\n.items-table th:first-child {\n  width: 48%;\n}\n\n.items-table th:nth-child(2) {\n  width: 12%;\n}\n\n.items-table th:nth-child(3) {\n  width: 20%;\n}\n\n.items-table th:nth-child(4) {\n  width: 20%;\n}\n\n.items-table th.center {\n  text-align: center;\n}\n\n.items-table th.right {\n  text-align: right;\n}\n\n.items-table td {\n  padding: 10px 9px;\n\n  border-bottom: 1px solid #e5e7eb;\n\n  font-size: 11px;\n\n  vertical-align: middle;\n}\n\n.description-cell {\n  word-break: break-word;\n\n  overflow-wrap: anywhere;\n}\n\n.item-name {\n  font-weight: 500;\n\n  color: #111827;\n}\n\n.center {\n  text-align: center;\n}\n\n.right {\n  text-align: right;\n\n  white-space: nowrap;\n}\n\n/* ==================================================\n   SUMMARY\n   ================================================== */\n\n.summary-container {\n  display: flex;\n\n  justify-content: flex-end;\n\n  margin-top: 20px;\n\n  break-inside: avoid;\n  page-break-inside: avoid;\n}\n\n.summary {\n  width: 280px;\n\n  max-width: 100%;\n}\n\n.summary-row {\n  display: flex;\n\n  justify-content: space-between;\n\n  align-items: baseline;\n\n  padding: 6px 0;\n\n  font-size: 11px;\n\n  gap: 20px;\n}\n\n.summary-label {\n  color: #6b7280;\n}\n\n.summary-value {\n  font-weight: 600;\n\n  color: #111827;\n\n  text-align: right;\n\n  white-space: nowrap;\n}\n\n.total-row {\n  display: flex;\n\n  justify-content: space-between;\n\n  align-items: baseline;\n\n  padding: 12px 0;\n\n  margin-top: 7px;\n\n  border-top: 2px solid #111827;\n\n  font-size: 16px;\n\n  font-weight: 700;\n\n  gap: 20px;\n}\n\n.total-label {\n  color: #111827;\n}\n\n.total-value {\n  color: #111827;\n\n  white-space: nowrap;\n}\n\n/* ==================================================\n   NOTES\n   ================================================== */\n\n.notes {\n  margin-top: 30px;\n\n  padding: 12px 14px;\n\n  background: #f9fafb;\n\n  border-left: 3px solid #111827;\n\n  break-inside: avoid;\n  page-break-inside: avoid;\n}\n\n.notes-title {\n  font-size: 10px;\n\n  font-weight: 700;\n\n  text-transform: uppercase;\n\n  letter-spacing: 0.5px;\n\n  margin-bottom: 5px;\n}\n\n.notes-content {\n  font-size: 10px;\n\n  color: #6b7280;\n\n  line-height: 1.5;\n\n  overflow-wrap: anywhere;\n}\n\n/* ==================================================\n   FOOTER\n   ================================================== */\n\n/*\n  Important:\n  Footer is now part of normal document flow.\n\n  The previous absolute positioning could contribute\n  to unwanted page overflow.\n*/\n\n.footer {\n  margin-top: 25px;\n\n  padding-top: 10px;\n\n  border-top: 1px solid #e5e7eb;\n\n  display: flex;\n\n  justify-content: space-between;\n\n  align-items: center;\n\n  gap: 20px;\n\n  font-size: 9px;\n\n  color: #9ca3af;\n\n  break-inside: avoid;\n  page-break-inside: avoid;\n}\n\n.footer span:last-child {\n  text-align: right;\n}\n\n/* ==================================================\n   PRINT\n   ================================================== */\n\n@media print {\n\n  html,\n  body {\n    width: 210mm;\n\n    margin: 0;\n\n    padding: 0;\n\n    background: #ffffff;\n  }\n\n  .invoice-container {\n    width: 210mm;\n\n    margin: 0;\n\n    padding:\n      15mm\n      18mm\n      12mm\n      18mm;\n  }\n}\n\n/* ==================================================\n   PDF RENDERING SAFETY\n   ================================================== */\n\n.header,\n.meta-section,\n.summary-container,\n.notes,\n.footer {\n  -webkit-column-break-inside: avoid;\n  break-inside: avoid;\n  page-break-inside: avoid;\n}\n\n</style>\n\n</head>\n\n<body>\n\n<div class=\"invoice-container\">\n\n  <!-- ============================================\n       HEADER\n       ============================================ -->\n\n  <div class=\"header\">\n\n    <div>\n\n      <div class=\"business-name\">\n        ${escapeHTML(invoice.business.name)}\n      </div>\n\n      <div class=\"business-details\">\n\n        ${\n          businessAddress\n            ? `${businessAddress}<br>`\n            : \"\"\n        }\n\n        ${\n          businessEmail\n            ? `${businessEmail}<br>`\n            : \"\"\n        }\n\n        ${\n          businessPhone\n            ? `${businessPhone}<br>`\n            : \"\"\n        }\n\n        ${\n          businessTaxId\n            ? `Tax ID: ${businessTaxId}`\n            : \"\"\n        }\n\n      </div>\n\n    </div>\n\n    <div class=\"invoice-title\">\n\n      <h1>INVOICE</h1>\n\n      <div class=\"invoice-number\">\n        #${escapeHTML(invoice.invoiceNumber)}\n      </div>\n\n    </div>\n\n  </div>\n\n\n  <!-- ============================================\n       CUSTOMER + INVOICE INFORMATION\n       ============================================ -->\n\n  <div class=\"meta-section\">\n\n    <div class=\"customer-section\">\n\n      <div class=\"customer-label\">\n        Bill To\n      </div>\n\n      <div class=\"customer-name\">\n        ${escapeHTML(invoice.customer.name)}\n      </div>\n\n      <div class=\"customer-details\">\n\n        ${\n          customerAddress\n            ? `${customerAddress}<br>`\n            : \"\"\n        }\n\n        ${\n          customerEmail\n            ? `${customerEmail}<br>`\n            : \"\"\n        }\n\n        ${\n          customerPhone\n            ? customerPhone\n            : \"\"\n        }\n\n      </div>\n\n    </div>\n\n\n    <div class=\"invoice-meta\">\n\n      <div class=\"meta-row\">\n\n        <span class=\"meta-label\">\n          Invoice Date\n        </span>\n\n        <span class=\"meta-value\">\n          ${formatDate(invoice.invoiceDate)}\n        </span>\n\n      </div>\n\n\n      <div class=\"meta-row\">\n\n        <span class=\"meta-label\">\n          Due Date\n        </span>\n\n        <span class=\"meta-value\">\n          ${formatDate(invoice.dueDate)}\n        </span>\n\n      </div>\n\n\n      <div class=\"meta-row\">\n\n        <span class=\"meta-label\">\n          Currency\n        </span>\n\n        <span class=\"meta-value\">\n          ${escapeHTML(currency)}\n        </span>\n\n      </div>\n\n    </div>\n\n  </div>\n\n\n  <!-- ============================================\n       ITEMS\n       ============================================ -->\n\n  <table class=\"items-table\">\n\n    <thead>\n\n      <tr>\n\n        <th>\n          Description\n        </th>\n\n        <th class=\"center\">\n          Qty\n        </th>\n\n        <th class=\"right\">\n          Unit Price\n        </th>\n\n        <th class=\"right\">\n          Amount\n        </th>\n\n      </tr>\n\n    </thead>\n\n    <tbody>\n\n      ${itemRows}\n\n    </tbody>\n\n  </table>\n\n\n  <!-- ============================================\n       SUMMARY\n       ============================================ -->\n\n  <div class=\"summary-container\">\n\n    <div class=\"summary\">\n\n      <div class=\"summary-row\">\n\n        <span class=\"summary-label\">\n          Subtotal\n        </span>\n\n        <span class=\"summary-value\">\n          ${formatCurrency(invoice.calculations.subtotal)}\n        </span>\n\n      </div>\n\n\n      <div class=\"summary-row\">\n\n        <span class=\"summary-label\">\n          ${discountLabel}\n        </span>\n\n        <span class=\"summary-value\">\n          -${formatCurrency(invoice.calculations.discountAmount)}\n        </span>\n\n      </div>\n\n\n      <div class=\"summary-row\">\n\n        <span class=\"summary-label\">\n          Taxable Amount\n        </span>\n\n        <span class=\"summary-value\">\n          ${formatCurrency(invoice.calculations.taxableAmount)}\n        </span>\n\n      </div>\n\n\n      <div class=\"summary-row\">\n\n        <span class=\"summary-label\">\n          ${taxLabel}\n        </span>\n\n        <span class=\"summary-value\">\n          ${formatCurrency(invoice.calculations.taxAmount)}\n        </span>\n\n      </div>\n\n\n      <div class=\"total-row\">\n\n        <span class=\"total-label\">\n          Total\n        </span>\n\n        <span class=\"total-value\">\n          ${formatCurrency(invoice.calculations.grandTotal)}\n        </span>\n\n      </div>\n\n    </div>\n\n  </div>\n\n\n  <!-- ============================================\n       NOTES\n       ============================================ -->\n\n  ${\n    invoice.notes\n      ? `\n        <div class=\"notes\">\n\n          <div class=\"notes-title\">\n            Notes\n          </div>\n\n          <div class=\"notes-content\">\n            ${escapeHTML(invoice.notes)}\n          </div>\n\n        </div>\n      `\n      : \"\"\n  }\n\n\n  <!-- ============================================\n       FOOTER\n       ============================================ -->\n\n  <div class=\"footer\">\n\n    <span>\n      ${escapeHTML(invoice.business.name)}\n    </span>\n\n    <span>\n      Thank you for your business.\n    </span>\n\n  </div>\n\n</div>\n\n</body>\n\n</html>\n`;\n\n// --------------------------------------------------\n// Return HTML\n// --------------------------------------------------\n\nreturn [\n  {\n    json: {\n      success: true,\n      invoice,\n      html\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        0
+      ],
+      "id": "83b2397d-a127-4456-815d-147dd99dc129",
+      "name": "Build Invoice Template"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.pdfshift.io/v3/convert/pdf",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "sk_8ac239468eb33f80ec134c41c08cf98ff787cdfa"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "source",
+              "value": "={{ $json.html }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "978f7e7b-602e-4377-bd7d-87e6ceb4ad74",
+      "name": "Generate PDF"
+    },
+    {
+      "parameters": {
+        "name": "={{ $json.invoice.invoiceNumber }}.pdf",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "root",
+          "cachedResultName": "/ (Root folder)"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1248,
+        0
+      ],
+      "id": "da9d5dc5-0fc7-4201-9f6c-054c8075084a",
+      "name": "Store Invoice",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "IGVkkLMBubF5zD5i",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.invoice.customer.email }}",
+        "subject": "=Invoice {{ $('Build Invoice Template').item.json.invoice.invoiceNumber }} from {{ $('Build Invoice Template').item.json.invoice.business.name }}",
+        "message": "=<div style=\"font-family: Arial, Helvetica, sans-serif; max-width: 600px; margin: 0 auto; color: #1f2937;\">    <h2 style=\"margin-bottom: 20px;\">     Invoice {{ $('Build Invoice Template').item.json.invoice.invoiceNumber }}   </h2>    <p>     Hello {{ $('Build Invoice Template').item.json.invoice.customer.name }},   </p>    <p>     Please find your invoice attached to this email.   </p>    <div style=\"     background: #f9fafb;     border: 1px solid #e5e7eb;     border-radius: 8px;     padding: 18px;     margin: 20px 0;   \">      <p style=\"margin: 6px 0;\">       <strong>Invoice Number:</strong>       {{ $('Build Invoice Template').item.json.invoice.invoiceNumber }}     </p>      <p style=\"margin: 6px 0;\">       <strong>Invoice Date:</strong>       {{ $('Build Invoice Template').item.json.invoice.invoiceDate }}     </p>      <p style=\"margin: 6px 0;\">       <strong>Due Date:</strong>       {{ $('Build Invoice Template').item.json.invoice.dueDate }}     </p>      <p style=\"margin: 6px 0;\">       <strong>Amount Due:</strong>       {{ $('Build Invoice Template').item.json.invoice.currency }}       {{ $('Build Invoice Template').item.json.invoice.calculations.amountDue }}     </p>    </div>    <p>     The invoice PDF is attached for your reference.   </p>    <p>     Thank you for your business.   </p>    <p>     Regards,<br>     <strong>{{ $('Build Invoice Template').item.json.invoice.business.name }}</strong><br>     {{ $('Build Invoice Template').item.json.invoice.business.email }}<br>     {{ $('Build Invoice Template').item.json.invoice.business.phone }}   </p>  </div>",
+        "options": {
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {}
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1376,
+        -176
+      ],
+      "id": "14c43586-b3c9-4f1a-b43d-7058bd9a1de5",
+      "name": "Email Invoice",
+      "webhookId": "0b5bda99-bf85-4192-97dc-6c13202498bf",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "dJo19xe1bVod4Y6k",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"success\": true,\n  \"message\": \"Invoice generated and sent successfully\",\n  \"invoice\": {\n    \"number\": \"INV-2026-001\",\n    \"total\": 37170,\n    \"currency\": \"INR\"\n  },\n  \"delivery\": {\n    \"email\": \"chandouqiande@gmail.com\",\n    \"status\": \"sent\"\n  },\n  \"file\": {\n    \"name\": \"INV-2026-001.pdf\",\n    \"status\": \"stored\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1584,
+        -176
+      ],
+      "id": "2da4c8b0-d582-4109-8ae3-5c5dff8a98fe",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1WI1c17E6FBwe4tVK6FXtvb6mRvpmn3Z-n56Hfn04adk",
+          "mode": "list",
+          "cachedResultName": "Day-17(Invoice Genrator)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1WI1c17E6FBwe4tVK6FXtvb6mRvpmn3Z-n56Hfn04adk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1WI1c17E6FBwe4tVK6FXtvb6mRvpmn3Z-n56Hfn04adk/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Invoice Number": "={{ $json.invoice.invoiceNumber }}",
+            "Customer Name": "={{ $json.invoice.customer.name }}",
+            "Customer Email": "={{ $json.invoice.customer.email }}",
+            "Invoice Date": "={{ $json.invoice.invoiceDate }}",
+            "Due Date": "={{ $json.invoice.dueDate }}",
+            "Currency": "={{ $json.invoice.currency }}",
+            "Sub Total": "={{ $json.invoice.calculations.subtotal }}",
+            "Discount ": "={{ $json.invoice.calculations.discountAmount }}",
+            "Tax": "={{ $json.invoice.calculations.taxAmount }}",
+            "Grand Total": "={{ $json.invoice.calculations.grandTotal }}",
+            "amount Due": "={{ $json.invoice.calculations.amountDue }}",
+            "Status": "pending",
+            "Created At": "={{$now}}",
+            "Last Reminder": "={{ $now }}",
+            "Reminder Count": "0"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Invoice Number",
+              "displayName": "Invoice Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Customer Name",
+              "displayName": "Customer Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Customer Email",
+              "displayName": "Customer Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Invoice Date",
+              "displayName": "Invoice Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Due Date",
+              "displayName": "Due Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Currency",
+              "displayName": "Currency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Sub Total",
+              "displayName": "Sub Total",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Discount ",
+              "displayName": "Discount ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Tax",
+              "displayName": "Tax",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Grand Total",
+              "displayName": "Grand Total",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "amount Due",
+              "displayName": "amount Due",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Created At",
+              "displayName": "Created At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Last Reminder",
+              "displayName": "Last Reminder",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Reminder Count",
+              "displayName": "Reminder Count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1184,
+        -384
+      ],
+      "id": "e6a274e1-5de0-467c-a9f8-24d8c74e5910",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "XUo0YZXw282TEr36",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        992,
+        -256
+      ],
+      "id": "bc5e1bc8-0787-4754-8f73-5fed15d0fafd",
+      "name": "Prepare Delivery Data"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1136,
+        656
+      ],
+      "id": "2b3ddd31-eba0-41c9-8c26-6bb2da0048d0",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1WI1c17E6FBwe4tVK6FXtvb6mRvpmn3Z-n56Hfn04adk",
+          "mode": "list",
+          "cachedResultName": "Day-17(Invoice Genrator)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1WI1c17E6FBwe4tVK6FXtvb6mRvpmn3Z-n56Hfn04adk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1WI1c17E6FBwe4tVK6FXtvb6mRvpmn3Z-n56Hfn04adk/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -928,
+        656
+      ],
+      "id": "c4a6a2aa-0e46-4778-838e-64cebfc6da2b",
+      "name": "Get Invoice Records",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "XUo0YZXw282TEr36",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nconst now = new Date();\n\nreturn items.map(item => {\n  const invoice = item.json;\n\n  const dueDate = new Date(invoice[\"Due Date\"]);\n\n  let status = String(invoice[\"Status\"] || \"pending\").toLowerCase();\n\n  let invoiceState = \"unknown\";\n  let action = \"none\";\n  let daysDifference = null;\n\n  // --------------------------------------------\n  // Ignore already paid invoices\n  // --------------------------------------------\n  if (status === \"paid\") {\n    invoiceState = \"paid\";\n    action = \"none\";\n  }\n\n  // --------------------------------------------\n  // Check unpaid invoices\n  // --------------------------------------------\n  else if (status === \"pending\") {\n\n    // Normalize both dates to midnight\n    const today = new Date(now);\n    today.setHours(0, 0, 0, 0);\n\n    const due = new Date(dueDate);\n    due.setHours(0, 0, 0, 0);\n\n    const differenceMs = due.getTime() - today.getTime();\n\n    daysDifference = Math.round(\n      differenceMs / (1000 * 60 * 60 * 24)\n    );\n\n    // ------------------------------------------\n    // Upcoming invoice\n    // ------------------------------------------\n    if (daysDifference > 3) {\n      invoiceState = \"upcoming\";\n      action = \"none\";\n    }\n\n    // ------------------------------------------\n    // Due within 3 days\n    // ------------------------------------------\n    else if (daysDifference > 0) {\n      invoiceState = \"due_soon\";\n      action = \"reminder\";\n    }\n\n    // ------------------------------------------\n    // Due today\n    // ------------------------------------------\n    else if (daysDifference === 0) {\n      invoiceState = \"due_today\";\n      action = \"reminder\";\n    }\n\n    // ------------------------------------------\n    // Overdue\n    // ------------------------------------------\n    else {\n      invoiceState = \"overdue\";\n      action = \"overdue_reminder\";\n    }\n  }\n\n  return {\n    json: {\n      ...invoice,\n\n      invoiceState,\n      action,\n      daysDifference\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -720,
+        656
+      ],
+      "id": "490a7d0c-b4d5-4283-8778-1ba6fe1352ec",
+      "name": "Check Invoice Status"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "7f21e477-6978-4f5b-a39d-e81017e37bb8",
+              "leftValue": "={{ $json.action }}",
+              "rightValue": "none",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -512,
+        656
+      ],
+      "id": "164237e4-3b99-4f71-8eed-2729eecdedfd",
+      "name": "Check Invoice Status1"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json[\"Customer Email\"] }}",
+        "subject": "=Reminder: Invoice {{ $json[\"Invoice Number\"] }} is due soon",
+        "message": "=<div style=\"\n  margin: 0;\n  padding: 30px 20px;\n  background-color: #ffffff;\n  font-family: Arial, Helvetica, sans-serif;\n  color: #1f2937;\n\">\n\n  <table\n    width=\"100%\"\n    cellpadding=\"0\"\n    cellspacing=\"0\"\n    border=\"0\"\n    style=\"\n      max-width: 620px;\n      margin: 0 auto;\n      border-collapse: collapse;\n    \"\n  >\n\n    <!-- HEADER -->\n\n    <tr>\n      <td style=\"\n        padding: 0 0 18px 0;\n        border-bottom: 2px solid #111827;\n      \">\n\n        <div style=\"\n          font-size: 26px;\n          line-height: 32px;\n          font-weight: 700;\n          color: #111827;\n        \">\n          Payment Reminder\n        </div>\n\n        <div style=\"\n          margin-top: 6px;\n          font-size: 13px;\n          line-height: 20px;\n          color: #6b7280;\n        \">\n          Invoice {{ $json[\"Invoice Number\"] }}\n        </div>\n\n      </td>\n    </tr>\n\n\n    <!-- SPACING -->\n\n    <tr>\n      <td height=\"28\" style=\"font-size:0; line-height:0;\">\n        &nbsp;\n      </td>\n    </tr>\n\n\n    <!-- GREETING -->\n\n    <tr>\n      <td style=\"\n        font-size: 15px;\n        line-height: 24px;\n        padding-bottom: 14px;\n      \">\n\n        Hello {{ $json[\"Customer Name\"] }},\n\n      </td>\n    </tr>\n\n\n    <!-- MESSAGE -->\n\n    <tr>\n      <td style=\"\n        font-size: 15px;\n        line-height: 24px;\n        padding-bottom: 24px;\n      \">\n\n        This is a friendly reminder that invoice\n        <strong>{{ $json[\"Invoice Number\"] }}</strong>\n        is due in\n        <strong>{{ $json[\"daysDifference\"] }} days</strong>.\n\n      </td>\n    </tr>\n\n\n    <!-- INVOICE DETAILS BOX -->\n\n    <tr>\n      <td>\n\n        <table\n          width=\"100%\"\n          cellpadding=\"0\"\n          cellspacing=\"0\"\n          border=\"0\"\n          style=\"\n            border-collapse: separate;\n            border-spacing: 0;\n            background-color: #f9fafb;\n            border: 1px solid #e5e7eb;\n            border-radius: 8px;\n          \"\n        >\n\n          <!-- BOX TITLE -->\n\n          <tr>\n            <td colspan=\"2\" style=\"\n              padding: 18px 20px 12px 20px;\n              font-size: 11px;\n              line-height: 16px;\n              font-weight: 700;\n              letter-spacing: 0.8px;\n              text-transform: uppercase;\n              color: #6b7280;\n            \">\n\n              Invoice Details\n\n            </td>\n          </tr>\n\n\n          <!-- INVOICE NUMBER -->\n\n          <tr>\n\n            <td width=\"45%\" style=\"\n              padding: 7px 10px 7px 20px;\n              font-size: 14px;\n              line-height: 20px;\n              color: #6b7280;\n            \">\n              Invoice Number\n            </td>\n\n            <td width=\"55%\" style=\"\n              padding: 7px 20px 7px 10px;\n              font-size: 14px;\n              line-height: 20px;\n              font-weight: 700;\n              color: #111827;\n              text-align: right;\n              white-space: nowrap;\n            \">\n              {{ $json[\"Invoice Number\"] }}\n            </td>\n\n          </tr>\n\n\n          <!-- INVOICE DATE -->\n\n          <tr>\n\n            <td style=\"\n              padding: 7px 10px 7px 20px;\n              font-size: 14px;\n              line-height: 20px;\n              color: #6b7280;\n            \">\n              Invoice Date\n            </td>\n\n            <td style=\"\n              padding: 7px 20px 7px 10px;\n              font-size: 14px;\n              line-height: 20px;\n              font-weight: 700;\n              color: #111827;\n              text-align: right;\n              white-space: nowrap;\n            \">\n              {{ new Date($json[\"Invoice Date\"]).toLocaleDateString(\"en-IN\", {\n                day: \"2-digit\",\n                month: \"short\",\n                year: \"numeric\"\n              }) }}\n            </td>\n\n          </tr>\n\n\n          <!-- DUE DATE -->\n\n          <tr>\n\n            <td style=\"\n              padding: 7px 10px 7px 20px;\n              font-size: 14px;\n              line-height: 20px;\n              color: #6b7280;\n            \">\n              Due Date\n            </td>\n\n            <td style=\"\n              padding: 7px 20px 7px 10px;\n              font-size: 14px;\n              line-height: 20px;\n              font-weight: 700;\n              color: #111827;\n              text-align: right;\n              white-space: nowrap;\n            \">\n              {{ new Date($json[\"Due Date\"]).toLocaleDateString(\"en-IN\", {\n                day: \"2-digit\",\n                month: \"short\",\n                year: \"numeric\"\n              }) }}\n            </td>\n\n          </tr>\n\n\n          <!-- SEPARATOR -->\n\n          <tr>\n            <td colspan=\"2\" style=\"\n              padding: 8px 20px 0 20px;\n            \">\n\n              <div style=\"\n                height: 1px;\n                background-color: #e5e7eb;\n                font-size: 0;\n                line-height: 0;\n              \">\n                &nbsp;\n              </div>\n\n            </td>\n          </tr>\n\n\n          <!-- AMOUNT DUE -->\n\n          <tr>\n\n            <td style=\"\n              padding: 16px 10px 18px 20px;\n              font-size: 14px;\n              line-height: 22px;\n              color: #6b7280;\n            \">\n              Amount Due\n            </td>\n\n            <td style=\"\n              padding: 16px 20px 18px 10px;\n              font-size: 20px;\n              line-height: 24px;\n              font-weight: 700;\n              color: #111827;\n              text-align: right;\n              white-space: nowrap;\n            \">\n\n              {{ $json[\"Currency\"] === \"INR\" ? \"₹\" : $json[\"Currency\"] }}\n\n              {{ Number($json[\"amount Due\"]).toLocaleString(\"en-IN\", {\n                minimumFractionDigits: 2,\n                maximumFractionDigits: 2\n              }) }}\n\n            </td>\n\n          </tr>\n\n        </table>\n\n      </td>\n    </tr>\n\n\n    <!-- SPACING -->\n\n    <tr>\n      <td height=\"24\" style=\"font-size:0; line-height:0;\">\n        &nbsp;\n      </td>\n    </tr>\n\n\n    <!-- PAYMENT MESSAGE -->\n\n    <tr>\n      <td style=\"\n        font-size: 14px;\n        line-height: 23px;\n        color: #4b5563;\n        padding-bottom: 14px;\n      \">\n\n        Please arrange payment by the due date.\n\n      </td>\n    </tr>\n\n\n    <!-- ALREADY PAID -->\n\n    <tr>\n      <td style=\"\n        font-size: 14px;\n        line-height: 23px;\n        color: #4b5563;\n        padding-bottom: 18px;\n      \">\n\n        If you have already made the payment,\n        please disregard this reminder.\n\n      </td>\n    </tr>\n\n\n    <!-- THANK YOU -->\n\n    <tr>\n      <td style=\"\n        font-size: 14px;\n        line-height: 23px;\n        color: #1f2937;\n        padding-bottom: 24px;\n      \">\n\n        Thank you.\n\n      </td>\n    </tr>\n\n\n    <!-- FOOTER -->\n\n    <tr>\n      <td style=\"\n        border-top: 1px solid #e5e7eb;\n        padding-top: 18px;\n        font-size: 12px;\n        line-height: 19px;\n        color: #9ca3af;\n      \">\n\n        <strong style=\"color: #4b5563;\">\n          Shinka Solutions\n        </strong>\n\n        <br>\n\n        {{ $json[\"Customer Email\"] }}\n\n      </td>\n    </tr>\n\n  </table>\n\n</div>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -208,
+        608
+      ],
+      "id": "c7cdd528-e769-4c0d-a24b-fe10f417eef2",
+      "name": "Send a message",
+      "webhookId": "8e887856-3c40-4a63-a1f9-3cbd3793fccf",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "dJo19xe1bVod4Y6k",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1WI1c17E6FBwe4tVK6FXtvb6mRvpmn3Z-n56Hfn04adk",
+          "mode": "list",
+          "cachedResultName": "Day-17(Invoice Genrator)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1WI1c17E6FBwe4tVK6FXtvb6mRvpmn3Z-n56Hfn04adk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1WI1c17E6FBwe4tVK6FXtvb6mRvpmn3Z-n56Hfn04adk/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Invoice Number": "={{ $json[\"Invoice Number\"] }}",
+            "Last Reminder": "={{ $now.toISO() }}",
+            "Reminder Count": "={{ Number($json[\"Reminder Count\"] || 0) + 1 }}"
+          },
+          "matchingColumns": [
+            "Invoice Number"
+          ],
+          "schema": [
+            {
+              "id": "Invoice Number",
+              "displayName": "Invoice Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Customer Name",
+              "displayName": "Customer Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Customer Email",
+              "displayName": "Customer Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Invoice Date",
+              "displayName": "Invoice Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Due Date",
+              "displayName": "Due Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Currency",
+              "displayName": "Currency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Sub Total",
+              "displayName": "Sub Total",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Discount ",
+              "displayName": "Discount ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Tax",
+              "displayName": "Tax",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Grand Total",
+              "displayName": "Grand Total",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "amount Due",
+              "displayName": "amount Due",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Created At",
+              "displayName": "Created At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Last Reminder",
+              "displayName": "Last Reminder",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reminder Count",
+              "displayName": "Reminder Count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -208,
+        448
+      ],
+      "id": "1af0768f-dbe5-475a-816b-f2e608e70be4",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "XUo0YZXw282TEr36",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "invoice-payment",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        1040,
+        592
+      ],
+      "id": "c70587bd-709f-42dc-b473-8849afc85156",
+      "name": "Payment Webhook",
+      "webhookId": "7a7e5b08-fc69-4897-ba63-7a6a3a5a874c"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nreturn items.map(item => {\n  const data = item.json.body ?? item.json;\n\n  const invoiceNumber = String(data.invoiceNumber || \"\").trim();\n  const paymentStatus = String(data.paymentStatus || \"\").trim().toLowerCase();\n\n  if (!invoiceNumber) {\n    throw new Error(\"Invoice number is required\");\n  }\n\n  if (paymentStatus !== \"paid\") {\n    throw new Error(\"Payment status must be 'paid'\");\n  }\n\n  return {\n    json: {\n      invoiceNumber,\n      paymentStatus\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1248,
+        592
+      ],
+      "id": "9e619460-e4ff-4feb-af81-ea64d1d03056",
+      "name": "Validate Payment"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1WI1c17E6FBwe4tVK6FXtvb6mRvpmn3Z-n56Hfn04adk",
+          "mode": "list",
+          "cachedResultName": "Day-17(Invoice Genrator)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1WI1c17E6FBwe4tVK6FXtvb6mRvpmn3Z-n56Hfn04adk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1WI1c17E6FBwe4tVK6FXtvb6mRvpmn3Z-n56Hfn04adk/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Invoice Number",
+              "lookupValue": "={{ $json.invoiceNumber }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1456,
+        592
+      ],
+      "id": "ccc4ee4c-b8ad-42e1-8879-012252dab490",
+      "name": "Find Invoice",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "XUo0YZXw282TEr36",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"success\": true,\n  \"message\": \"Invoice marked as paid\",\n  \"invoiceNumber\": \"INV-2026-001\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1872,
+        592
+      ],
+      "id": "9960fdd0-6cef-485c-abb7-0ddbb4a7d1a5",
+      "name": "Respond to Payment"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1WI1c17E6FBwe4tVK6FXtvb6mRvpmn3Z-n56Hfn04adk",
+          "mode": "list",
+          "cachedResultName": "Day-17(Invoice Genrator)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1WI1c17E6FBwe4tVK6FXtvb6mRvpmn3Z-n56Hfn04adk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1WI1c17E6FBwe4tVK6FXtvb6mRvpmn3Z-n56Hfn04adk/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Invoice Number": "={{ $json['Invoice Number'] }}",
+            "amount Due": "0",
+            "Status": "paid"
+          },
+          "matchingColumns": [
+            "Invoice Number"
+          ],
+          "schema": [
+            {
+              "id": "Invoice Number",
+              "displayName": "Invoice Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Customer Name",
+              "displayName": "Customer Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Customer Email",
+              "displayName": "Customer Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Invoice Date",
+              "displayName": "Invoice Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Due Date",
+              "displayName": "Due Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Currency",
+              "displayName": "Currency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Sub Total",
+              "displayName": "Sub Total",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Discount ",
+              "displayName": "Discount ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Tax",
+              "displayName": "Tax",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Grand Total",
+              "displayName": "Grand Total",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "amount Due",
+              "displayName": "amount Due",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Created At",
+              "displayName": "Created At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Last Reminder",
+              "displayName": "Last Reminder",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Reminder Count",
+              "displayName": "Reminder Count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1664,
+        592
+      ],
+      "id": "a3e0787e-facb-4e01-9eaf-ecffb5824f4c",
+      "name": "Mark Invoice as Paid",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "XUo0YZXw282TEr36",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Validate Invoice Input": {
+      "main": [
+        [
+          {
+            "node": "Normalize Invoice Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Invoice Data": {
+      "main": [
+        [
+          {
+            "node": "Calculate Invoice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Invoice": {
+      "main": [
+        [
+          {
+            "node": "Build Invoice Template",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Prepare Delivery Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Invoice Request": {
+      "main": [
+        [
+          {
+            "node": "Validate Invoice Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Invoice Template": {
+      "main": [
+        [
+          {
+            "node": "Generate PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate PDF": {
+      "main": [
+        [
+          {
+            "node": "Store Invoice",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Prepare Delivery Data",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Store Invoice": {
+      "main": [
+        []
+      ]
+    },
+    "Email Invoice": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Delivery Data": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Email Invoice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get Invoice Records",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Invoice Records": {
+      "main": [
+        [
+          {
+            "node": "Check Invoice Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Invoice Status": {
+      "main": [
+        [
+          {
+            "node": "Check Invoice Status1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Invoice Status1": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Payment Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate Payment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Payment": {
+      "main": [
+        [
+          {
+            "node": "Find Invoice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Invoice": {
+      "main": [
+        [
+          {
+            "node": "Mark Invoice as Paid",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Invoice as Paid": {
+      "main": [
+        [
+          {
+            "node": "Respond to Payment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "pinData": {},
+  "versionId": "1637ba4b-c779-4d54-a5a3-81575ab98226",
+  "activeVersionId": "1637ba4b-c779-4d54-a5a3-81575ab98226",
+  "versionCounter": 205,
+  "triggerCount": 2,
+  "shared": [
+    {
+      "updatedAt": "2026-08-26T05:32:39.783Z",
+      "createdAt": "2026-08-26T05:32:39.783Z",
+      "role": "workflow:owner",
+      "workflowId": "8DDgfXcJXLwVI8TO",
+      "projectId": "loWf0mBs1xKuh5N3",
+      "project": {
+        "updatedAt": "2026-06-04T07:55:05.260Z",
+        "createdAt": "2026-06-04T07:52:41.897Z",
+        "id": "loWf0mBs1xKuh5N3",
+        "name": "Chandu M <chandouqiande@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "8d994dc9-eaab-443f-93bf-ef4aa823f36d"
+      }
+    }
+  ],
+  "tags": [
+    {
+      "updatedAt": "2026-06-09T06:33:15.749Z",
+      "createdAt": "2026-06-09T06:33:15.749Z",
+      "id": "OqenQjr9s45g7AEO",
+      "name": "ai"
+    },
+    {
+      "updatedAt": "2026-06-09T06:33:45.548Z",
+      "createdAt": "2026-06-09T06:33:45.548Z",
+      "id": "SSAFLny1wplVixFm",
+      "name": "ai agent"
+    },
+    {
+      "updatedAt": "2026-06-19T18:47:33.921Z",
+      "createdAt": "2026-06-19T18:47:33.921Z",
+      "id": "adTN6XPgfo01vqx0",
+      "name": "ai automation"
+    }
+  ],
+  "parentFolder": null,
+  "activeVersion": {
+    "updatedAt": "2026-09-05T05:34:27.000Z",
+    "createdAt": "2026-09-05T05:33:46.516Z",
+    "versionId": "1637ba4b-c779-4d54-a5a3-81575ab98226",
+    "workflowId": "8DDgfXcJXLwVI8TO",
+    "nodes": [
+      {
+        "parameters": {
+          "jsCode": "const input = $input.first().json;\n\n// n8n Webhook payload is normally inside `body`\nconst data = input.body ?? input;\n\nconst errors = [];\n\n// -------------------------\n// Business validation\n// -------------------------\nif (!data.business?.name?.trim()) {\n  errors.push(\"Business name is required\");\n}\n\nif (!data.business?.email?.trim()) {\n  errors.push(\"Business email is required\");\n}\n\n// -------------------------\n// Customer validation\n// -------------------------\nif (!data.customer?.name?.trim()) {\n  errors.push(\"Customer name is required\");\n}\n\nif (!data.customer?.email?.trim()) {\n  errors.push(\"Customer email is required\");\n}\n\n// Basic email validation\nconst emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;\n\nif (\n  data.business?.email &&\n  !emailRegex.test(data.business.email)\n) {\n  errors.push(\"Business email is invalid\");\n}\n\nif (\n  data.customer?.email &&\n  !emailRegex.test(data.customer.email)\n) {\n  errors.push(\"Customer email is invalid\");\n}\n\n// -------------------------\n// Invoice validation\n// -------------------------\nif (!data.invoice?.number?.trim()) {\n  errors.push(\"Invoice number is required\");\n}\n\nif (!data.invoice?.date) {\n  errors.push(\"Invoice date is required\");\n}\n\nif (!data.invoice?.currency?.trim()) {\n  errors.push(\"Currency is required\");\n}\n\n// -------------------------\n// Items validation\n// -------------------------\nif (!Array.isArray(data.items) || data.items.length === 0) {\n  errors.push(\"At least one invoice item is required\");\n} else {\n  data.items.forEach((item, index) => {\n    const itemNumber = index + 1;\n\n    if (!item.description?.trim()) {\n      errors.push(`Item ${itemNumber}: description is required`);\n    }\n\n    if (\n      typeof item.quantity !== \"number\" ||\n      !Number.isFinite(item.quantity) ||\n      item.quantity <= 0\n    ) {\n      errors.push(\n        `Item ${itemNumber}: quantity must be greater than 0`\n      );\n    }\n\n    if (\n      typeof item.unit_price !== \"number\" ||\n      !Number.isFinite(item.unit_price) ||\n      item.unit_price < 0\n    ) {\n      errors.push(\n        `Item ${itemNumber}: unit price cannot be negative`\n      );\n    }\n  });\n}\n\n// -------------------------\n// Discount validation\n// -------------------------\nif (data.discount) {\n  const discountType = data.discount.type;\n  const discountValue = data.discount.value;\n\n  if (![\"percentage\", \"fixed\"].includes(discountType)) {\n    errors.push(\n      \"Discount type must be either percentage or fixed\"\n    );\n  }\n\n  if (\n    typeof discountValue !== \"number\" ||\n    !Number.isFinite(discountValue) ||\n    discountValue < 0\n  ) {\n    errors.push(\"Discount value must be 0 or greater\");\n  }\n\n  if (\n    discountType === \"percentage\" &&\n    discountValue > 100\n  ) {\n    errors.push(\"Discount percentage cannot exceed 100\");\n  }\n}\n\n// -------------------------\n// Tax validation\n// -------------------------\nif (data.tax) {\n  const taxType = data.tax.type;\n  const taxValue = data.tax.value;\n\n  if (![\"percentage\", \"fixed\"].includes(taxType)) {\n    errors.push(\n      \"Tax type must be either percentage or fixed\"\n    );\n  }\n\n  if (\n    typeof taxValue !== \"number\" ||\n    !Number.isFinite(taxValue) ||\n    taxValue < 0\n  ) {\n    errors.push(\"Tax value must be 0 or greater\");\n  }\n\n  if (\n    taxType === \"percentage\" &&\n    taxValue > 100\n  ) {\n    errors.push(\"Tax percentage cannot exceed 100\");\n  }\n}\n\n// -------------------------\n// Final response\n// -------------------------\nif (errors.length > 0) {\n  return [\n    {\n      json: {\n        success: false,\n        valid: false,\n        error: \"Invalid invoice data\",\n        details: errors\n      }\n    }\n  ];\n}\n\n// Valid input\nreturn [\n  {\n    json: {\n      success: true,\n      valid: true,\n      data\n    }\n  }\n];"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          208,
+          0
+        ],
+        "id": "75676487-9654-4896-b2a5-a29db302257f",
+        "name": "Validate Invoice Input"
+      },
+      {
+        "parameters": {
+          "jsCode": "const input = $input.first().json;\n\nconst data = input.data;\n\n// Generate a clean internal invoice structure\nconst invoice = {\n  invoiceNumber: data.invoice.number,\n  invoiceDate: data.invoice.date,\n  dueDate: data.invoice.due_date ?? null,\n  currency: data.invoice.currency,\n\n  business: {\n    name: data.business.name,\n    email: data.business.email,\n    phone: data.business.phone ?? null,\n    address: data.business.address ?? null,\n    taxId: data.business.tax_id ?? null\n  },\n\n  customer: {\n    name: data.customer.name,\n    email: data.customer.email,\n    phone: data.customer.phone ?? null,\n    address: data.customer.address ?? null\n  },\n\n  items: data.items.map(item => ({\n    description: item.description,\n    quantity: Number(item.quantity),\n    unitPrice: Number(item.unit_price)\n  })),\n\n  discount: {\n    type: data.discount?.type ?? \"percentage\",\n    value: Number(data.discount?.value ?? 0)\n  },\n\n  tax: {\n    type: data.tax?.type ?? \"percentage\",\n    value: Number(data.tax?.value ?? 0)\n  },\n\n  notes: data.notes ?? null\n};\n\nreturn [\n  {\n    json: {\n      success: true,\n      invoice\n    }\n  }\n];"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          416,
+          0
+        ],
+        "id": "7c6a3e82-837a-4a6c-aceb-2a677c249d97",
+        "name": "Normalize Invoice Data"
+      },
+      {
+        "parameters": {
+          "jsCode": "const input = $input.first().json;\nconst invoice = input.invoice;\n\n// --------------------------------------------------\n// Helper: round monetary values to 2 decimal places\n// --------------------------------------------------\nfunction roundMoney(value) {\n  return Math.round((value + Number.EPSILON) * 100) / 100;\n}\n\n// --------------------------------------------------\n// Calculate line items\n// --------------------------------------------------\nconst calculatedItems = invoice.items.map((item, index) => {\n  const quantity = Number(item.quantity);\n  const unitPrice = Number(item.unitPrice);\n\n  const lineTotal = roundMoney(quantity * unitPrice);\n\n  return {\n    itemNumber: index + 1,\n    description: item.description,\n    quantity,\n    unitPrice,\n    lineTotal\n  };\n});\n\n// --------------------------------------------------\n// Subtotal\n// --------------------------------------------------\nconst subtotal = roundMoney(\n  calculatedItems.reduce(\n    (sum, item) => sum + item.lineTotal,\n    0\n  )\n);\n\n// --------------------------------------------------\n// Discount\n// --------------------------------------------------\nlet discountAmount = 0;\n\nif (invoice.discount?.type === \"percentage\") {\n  discountAmount = roundMoney(\n    subtotal * (Number(invoice.discount.value) / 100)\n  );\n}\n\nif (invoice.discount?.type === \"fixed\") {\n  discountAmount = roundMoney(\n    Number(invoice.discount.value)\n  );\n}\n\n// Prevent discount from exceeding subtotal\ndiscountAmount = Math.min(discountAmount, subtotal);\n\n// --------------------------------------------------\n// Taxable amount\n// --------------------------------------------------\nconst taxableAmount = roundMoney(\n  subtotal - discountAmount\n);\n\n// --------------------------------------------------\n// Tax\n// --------------------------------------------------\nlet taxAmount = 0;\n\nif (invoice.tax?.type === \"percentage\") {\n  taxAmount = roundMoney(\n    taxableAmount * (Number(invoice.tax.value) / 100)\n  );\n}\n\nif (invoice.tax?.type === \"fixed\") {\n  taxAmount = roundMoney(\n    Number(invoice.tax.value)\n  );\n}\n\n// --------------------------------------------------\n// Grand total\n// --------------------------------------------------\nconst grandTotal = roundMoney(\n  taxableAmount + taxAmount\n);\n\n// --------------------------------------------------\n// Final output\n// --------------------------------------------------\nreturn [\n  {\n    json: {\n      success: true,\n\n      invoice: {\n        ...invoice,\n\n        items: calculatedItems,\n\n        calculations: {\n          subtotal,\n          discountAmount,\n          taxableAmount,\n          taxAmount,\n          grandTotal,\n          amountDue: grandTotal\n        }\n      }\n    }\n  }\n];"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          624,
+          0
+        ],
+        "id": "42e17430-c522-4ca7-9203-0fcfcbe58e92",
+        "name": "Calculate Invoice"
+      },
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "invoice/generate",
+          "responseMode": "responseNode",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          0,
+          0
+        ],
+        "id": "4addf599-1376-4e84-b52f-b86fedc15dda",
+        "name": "Invoice Request",
+        "webhookId": "7cb1ed40-0808-4657-9beb-fc820e3dad95"
+      },
+      {
+        "parameters": {
+          "jsCode": "const input = $input.first().json;\nconst invoice = input.invoice;\n\nconst currency = invoice.currency || \"INR\";\n\n// --------------------------------------------------\n// Currency formatter\n// --------------------------------------------------\nfunction formatCurrency(value) {\n  return new Intl.NumberFormat(\"en-IN\", {\n    style: \"currency\",\n    currency: currency,\n    minimumFractionDigits: 2,\n    maximumFractionDigits: 2\n  }).format(Number(value || 0));\n}\n\n// --------------------------------------------------\n// Date formatter\n// --------------------------------------------------\nfunction formatDate(date) {\n  if (!date) return \"-\";\n\n  const parsedDate = new Date(date);\n\n  if (Number.isNaN(parsedDate.getTime())) {\n    return \"-\";\n  }\n\n  return new Intl.DateTimeFormat(\"en-IN\", {\n    day: \"2-digit\",\n    month: \"short\",\n    year: \"numeric\"\n  }).format(parsedDate);\n}\n\n// --------------------------------------------------\n// Escape HTML\n// Prevent user-provided values from breaking HTML\n// --------------------------------------------------\nfunction escapeHTML(value) {\n  return String(value ?? \"\")\n    .replace(/&/g, \"&amp;\")\n    .replace(/</g, \"&lt;\")\n    .replace(/>/g, \"&gt;\")\n    .replace(/\"/g, \"&quot;\")\n    .replace(/'/g, \"&#039;\");\n}\n\n// --------------------------------------------------\n// Generate item rows\n// --------------------------------------------------\nconst itemRows = invoice.items\n  .map((item) => {\n    return `\n      <tr>\n        <td class=\"description-cell\">\n          <div class=\"item-name\">\n            ${escapeHTML(item.description)}\n          </div>\n        </td>\n\n        <td class=\"center\">\n          ${escapeHTML(item.quantity)}\n        </td>\n\n        <td class=\"right\">\n          ${formatCurrency(item.unitPrice)}\n        </td>\n\n        <td class=\"right\">\n          ${formatCurrency(item.lineTotal)}\n        </td>\n      </tr>\n    `;\n  })\n  .join(\"\");\n\n// --------------------------------------------------\n// Discount label\n// --------------------------------------------------\nlet discountLabel = \"Discount\";\n\nif (invoice.discount?.type === \"percentage\") {\n  discountLabel = `Discount (${escapeHTML(invoice.discount.value)}%)`;\n}\n\n// --------------------------------------------------\n// Tax label\n// --------------------------------------------------\nlet taxLabel = \"Tax\";\n\nif (invoice.tax?.type === \"percentage\") {\n  taxLabel = `Tax (${escapeHTML(invoice.tax.value)}%)`;\n}\n\n// --------------------------------------------------\n// Optional business information\n// --------------------------------------------------\nconst businessAddress = invoice.business.address\n  ? escapeHTML(invoice.business.address)\n  : \"\";\n\nconst businessEmail = invoice.business.email\n  ? escapeHTML(invoice.business.email)\n  : \"\";\n\nconst businessPhone = invoice.business.phone\n  ? escapeHTML(invoice.business.phone)\n  : \"\";\n\nconst businessTaxId = invoice.business.taxId\n  ? escapeHTML(invoice.business.taxId)\n  : \"\";\n\nconst customerAddress = invoice.customer.address\n  ? escapeHTML(invoice.customer.address)\n  : \"\";\n\nconst customerEmail = invoice.customer.email\n  ? escapeHTML(invoice.customer.email)\n  : \"\";\n\nconst customerPhone = invoice.customer.phone\n  ? escapeHTML(invoice.customer.phone)\n  : \"\";\n\n// --------------------------------------------------\n// Generate complete invoice HTML\n// --------------------------------------------------\nconst html = `\n<!DOCTYPE html>\n<html lang=\"en\">\n\n<head>\n\n<meta charset=\"UTF-8\">\n\n<meta\n  name=\"viewport\"\n  content=\"width=device-width, initial-scale=1.0\"\n>\n\n<title>\n  Invoice ${escapeHTML(invoice.invoiceNumber)}\n</title>\n\n<style>\n\n/* ==================================================\n   GLOBAL\n   ================================================== */\n\n* {\n  box-sizing: border-box;\n}\n\nhtml,\nbody {\n  margin: 0;\n  padding: 0;\n  width: 100%;\n  background: #ffffff;\n}\n\nbody {\n  font-family:\n    Arial,\n    Helvetica,\n    sans-serif;\n\n  color: #1f2937;\n\n  -webkit-print-color-adjust: exact;\n  print-color-adjust: exact;\n}\n\n/* ==================================================\n   PAGE\n   ================================================== */\n\n@page {\n  size: A4;\n  margin: 0;\n}\n\n/*\n  Important:\n  Do NOT use min-height: 297mm here.\n\n  The previous version used:\n    min-height: 297mm\n    margin: 20px auto\n\n  which could force the renderer to create\n  an unnecessary second page.\n*/\n\n.invoice-container {\n  width: 210mm;\n\n  margin: 0 auto;\n\n  padding:\n    15mm\n    18mm\n    12mm\n    18mm;\n\n  background: #ffffff;\n\n  position: relative;\n\n  overflow: visible;\n}\n\n/* ==================================================\n   HEADER\n   ================================================== */\n\n.header {\n  display: flex;\n\n  justify-content: space-between;\n\n  align-items: flex-start;\n\n  padding-bottom: 20px;\n\n  border-bottom: 2px solid #111827;\n\n  break-inside: avoid;\n  page-break-inside: avoid;\n}\n\n.business-name {\n  font-size: 28px;\n\n  font-weight: 700;\n\n  color: #111827;\n\n  margin-bottom: 7px;\n}\n\n.business-details {\n  font-size: 11px;\n\n  line-height: 1.55;\n\n  color: #6b7280;\n}\n\n.invoice-title {\n  text-align: right;\n\n  flex-shrink: 0;\n\n  margin-left: 20px;\n}\n\n.invoice-title h1 {\n  margin: 0;\n\n  font-size: 32px;\n\n  line-height: 1;\n\n  letter-spacing: 2px;\n\n  color: #111827;\n}\n\n.invoice-number {\n  margin-top: 8px;\n\n  font-size: 12px;\n\n  color: #6b7280;\n}\n\n/* ==================================================\n   CUSTOMER + INVOICE META\n   ================================================== */\n\n.meta-section {\n  display: flex;\n\n  justify-content: space-between;\n\n  align-items: flex-start;\n\n  margin-top: 25px;\n\n  margin-bottom: 28px;\n\n  break-inside: avoid;\n  page-break-inside: avoid;\n}\n\n.customer-section {\n  width: 55%;\n\n  padding-right: 20px;\n}\n\n.customer-label {\n  font-size: 10px;\n\n  font-weight: 700;\n\n  letter-spacing: 1px;\n\n  color: #6b7280;\n\n  text-transform: uppercase;\n\n  margin-bottom: 7px;\n}\n\n.customer-name {\n  font-size: 15px;\n\n  font-weight: 700;\n\n  color: #111827;\n\n  margin-bottom: 4px;\n}\n\n.customer-details {\n  font-size: 11px;\n\n  line-height: 1.55;\n\n  color: #6b7280;\n}\n\n.invoice-meta {\n  width: 40%;\n}\n\n.meta-row {\n  display: flex;\n\n  justify-content: space-between;\n\n  align-items: baseline;\n\n  margin-bottom: 7px;\n\n  font-size: 11px;\n\n  gap: 15px;\n}\n\n.meta-label {\n  color: #6b7280;\n}\n\n.meta-value {\n  font-weight: 600;\n\n  color: #111827;\n\n  text-align: right;\n}\n\n/* ==================================================\n   ITEMS TABLE\n   ================================================== */\n\n.items-table {\n  width: 100%;\n\n  border-collapse: collapse;\n\n  margin-top: 5px;\n\n  table-layout: fixed;\n\n  break-inside: auto;\n  page-break-inside: auto;\n}\n\n.items-table thead {\n  background: #111827;\n\n  color: #ffffff;\n\n  display: table-header-group;\n}\n\n.items-table tr {\n  break-inside: avoid;\n  page-break-inside: avoid;\n}\n\n.items-table th {\n  padding: 10px 9px;\n\n  font-size: 10px;\n\n  text-transform: uppercase;\n\n  letter-spacing: 0.5px;\n\n  text-align: left;\n}\n\n.items-table th:first-child {\n  width: 48%;\n}\n\n.items-table th:nth-child(2) {\n  width: 12%;\n}\n\n.items-table th:nth-child(3) {\n  width: 20%;\n}\n\n.items-table th:nth-child(4) {\n  width: 20%;\n}\n\n.items-table th.center {\n  text-align: center;\n}\n\n.items-table th.right {\n  text-align: right;\n}\n\n.items-table td {\n  padding: 10px 9px;\n\n  border-bottom: 1px solid #e5e7eb;\n\n  font-size: 11px;\n\n  vertical-align: middle;\n}\n\n.description-cell {\n  word-break: break-word;\n\n  overflow-wrap: anywhere;\n}\n\n.item-name {\n  font-weight: 500;\n\n  color: #111827;\n}\n\n.center {\n  text-align: center;\n}\n\n.right {\n  text-align: right;\n\n  white-space: nowrap;\n}\n\n/* ==================================================\n   SUMMARY\n   ================================================== */\n\n.summary-container {\n  display: flex;\n\n  justify-content: flex-end;\n\n  margin-top: 20px;\n\n  break-inside: avoid;\n  page-break-inside: avoid;\n}\n\n.summary {\n  width: 280px;\n\n  max-width: 100%;\n}\n\n.summary-row {\n  display: flex;\n\n  justify-content: space-between;\n\n  align-items: baseline;\n\n  padding: 6px 0;\n\n  font-size: 11px;\n\n  gap: 20px;\n}\n\n.summary-label {\n  color: #6b7280;\n}\n\n.summary-value {\n  font-weight: 600;\n\n  color: #111827;\n\n  text-align: right;\n\n  white-space: nowrap;\n}\n\n.total-row {\n  display: flex;\n\n  justify-content: space-between;\n\n  align-items: baseline;\n\n  padding: 12px 0;\n\n  margin-top: 7px;\n\n  border-top: 2px solid #111827;\n\n  font-size: 16px;\n\n  font-weight: 700;\n\n  gap: 20px;\n}\n\n.total-label {\n  color: #111827;\n}\n\n.total-value {\n  color: #111827;\n\n  white-space: nowrap;\n}\n\n/* ==================================================\n   NOTES\n   ================================================== */\n\n.notes {\n  margin-top: 30px;\n\n  padding: 12px 14px;\n\n  background: #f9fafb;\n\n  border-left: 3px solid #111827;\n\n  break-inside: avoid;\n  page-break-inside: avoid;\n}\n\n.notes-title {\n  font-size: 10px;\n\n  font-weight: 700;\n\n  text-transform: uppercase;\n\n  letter-spacing: 0.5px;\n\n  margin-bottom: 5px;\n}\n\n.notes-content {\n  font-size: 10px;\n\n  color: #6b7280;\n\n  line-height: 1.5;\n\n  overflow-wrap: anywhere;\n}\n\n/* ==================================================\n   FOOTER\n   ================================================== */\n\n/*\n  Important:\n  Footer is now part of normal document flow.\n\n  The previous absolute positioning could contribute\n  to unwanted page overflow.\n*/\n\n.footer {\n  margin-top: 25px;\n\n  padding-top: 10px;\n\n  border-top: 1px solid #e5e7eb;\n\n  display: flex;\n\n  justify-content: space-between;\n\n  align-items: center;\n\n  gap: 20px;\n\n  font-size: 9px;\n\n  color: #9ca3af;\n\n  break-inside: avoid;\n  page-break-inside: avoid;\n}\n\n.footer span:last-child {\n  text-align: right;\n}\n\n/* ==================================================\n   PRINT\n   ================================================== */\n\n@media print {\n\n  html,\n  body {\n    width: 210mm;\n\n    margin: 0;\n\n    padding: 0;\n\n    background: #ffffff;\n  }\n\n  .invoice-container {\n    width: 210mm;\n\n    margin: 0;\n\n    padding:\n      15mm\n      18mm\n      12mm\n      18mm;\n  }\n}\n\n/* ==================================================\n   PDF RENDERING SAFETY\n   ================================================== */\n\n.header,\n.meta-section,\n.summary-container,\n.notes,\n.footer {\n  -webkit-column-break-inside: avoid;\n  break-inside: avoid;\n  page-break-inside: avoid;\n}\n\n</style>\n\n</head>\n\n<body>\n\n<div class=\"invoice-container\">\n\n  <!-- ============================================\n       HEADER\n       ============================================ -->\n\n  <div class=\"header\">\n\n    <div>\n\n      <div class=\"business-name\">\n        ${escapeHTML(invoice.business.name)}\n      </div>\n\n      <div class=\"business-details\">\n\n        ${\n          businessAddress\n            ? `${businessAddress}<br>`\n            : \"\"\n        }\n\n        ${\n          businessEmail\n            ? `${businessEmail}<br>`\n            : \"\"\n        }\n\n        ${\n          businessPhone\n            ? `${businessPhone}<br>`\n            : \"\"\n        }\n\n        ${\n          businessTaxId\n            ? `Tax ID: ${businessTaxId}`\n            : \"\"\n        }\n\n      </div>\n\n    </div>\n\n    <div class=\"invoice-title\">\n\n      <h1>INVOICE</h1>\n\n      <div class=\"invoice-number\">\n        #${escapeHTML(invoice.invoiceNumber)}\n      </div>\n\n    </div>\n\n  </div>\n\n\n  <!-- ============================================\n       CUSTOMER + INVOICE INFORMATION\n       ============================================ -->\n\n  <div class=\"meta-section\">\n\n    <div class=\"customer-section\">\n\n      <div class=\"customer-label\">\n        Bill To\n      </div>\n\n      <div class=\"customer-name\">\n        ${escapeHTML(invoice.customer.name)}\n      </div>\n\n      <div class=\"customer-details\">\n\n        ${\n          customerAddress\n            ? `${customerAddress}<br>`\n            : \"\"\n        }\n\n        ${\n          customerEmail\n            ? `${customerEmail}<br>`\n            : \"\"\n        }\n\n        ${\n          customerPhone\n            ? customerPhone\n            : \"\"\n        }\n\n      </div>\n\n    </div>\n\n\n    <div class=\"invoice-meta\">\n\n      <div class=\"meta-row\">\n\n        <span class=\"meta-label\">\n          Invoice Date\n        </span>\n\n        <span class=\"meta-value\">\n          ${formatDate(invoice.invoiceDate)}\n        </span>\n\n      </div>\n\n\n      <div class=\"meta-row\">\n\n        <span class=\"meta-label\">\n          Due Date\n        </span>\n\n        <span class=\"meta-value\">\n          ${formatDate(invoice.dueDate)}\n        </span>\n\n      </div>\n\n\n      <div class=\"meta-row\">\n\n        <span class=\"meta-label\">\n          Currency\n        </span>\n\n        <span class=\"meta-value\">\n          ${escapeHTML(currency)}\n        </span>\n\n      </div>\n\n    </div>\n\n  </div>\n\n\n  <!-- ============================================\n       ITEMS\n       ============================================ -->\n\n  <table class=\"items-table\">\n\n    <thead>\n\n      <tr>\n\n        <th>\n          Description\n        </th>\n\n        <th class=\"center\">\n          Qty\n        </th>\n\n        <th class=\"right\">\n          Unit Price\n        </th>\n\n        <th class=\"right\">\n          Amount\n        </th>\n\n      </tr>\n\n    </thead>\n\n    <tbody>\n\n      ${itemRows}\n\n    </tbody>\n\n  </table>\n\n\n  <!-- ============================================\n       SUMMARY\n       ============================================ -->\n\n  <div class=\"summary-container\">\n\n    <div class=\"summary\">\n\n      <div class=\"summary-row\">\n\n        <span class=\"summary-label\">\n          Subtotal\n        </span>\n\n        <span class=\"summary-value\">\n          ${formatCurrency(invoice.calculations.subtotal)}\n        </span>\n\n      </div>\n\n\n      <div class=\"summary-row\">\n\n        <span class=\"summary-label\">\n          ${discountLabel}\n        </span>\n\n        <span class=\"summary-value\">\n          -${formatCurrency(invoice.calculations.discountAmount)}\n        </span>\n\n      </div>\n\n\n      <div class=\"summary-row\">\n\n        <span class=\"summary-label\">\n          Taxable Amount\n        </span>\n\n        <span class=\"summary-value\">\n          ${formatCurrency(invoice.calculations.taxableAmount)}\n        </span>\n\n      </div>\n\n\n      <div class=\"summary-row\">\n\n        <span class=\"summary-label\">\n          ${taxLabel}\n        </span>\n\n        <span class=\"summary-value\">\n          ${formatCurrency(invoice.calculations.taxAmount)}\n        </span>\n\n      </div>\n\n\n      <div class=\"total-row\">\n\n        <span class=\"total-label\">\n          Total\n        </span>\n\n        <span class=\"total-value\">\n          ${formatCurrency(invoice.calculations.grandTotal)}\n        </span>\n\n      </div>\n\n    </div>\n\n  </div>\n\n\n  <!-- ============================================\n       NOTES\n       ============================================ -->\n\n  ${\n    invoice.notes\n      ? `\n        <div class=\"notes\">\n\n          <div class=\"notes-title\">\n            Notes\n          </div>\n\n          <div class=\"notes-content\">\n            ${escapeHTML(invoice.notes)}\n          </div>\n\n        </div>\n      `\n      : \"\"\n  }\n\n\n  <!-- ============================================\n       FOOTER\n       ============================================ -->\n\n  <div class=\"footer\">\n\n    <span>\n      ${escapeHTML(invoice.business.name)}\n    </span>\n\n    <span>\n      Thank you for your business.\n    </span>\n\n  </div>\n\n</div>\n\n</body>\n\n</html>\n`;\n\n// --------------------------------------------------\n// Return HTML\n// --------------------------------------------------\n\nreturn [\n  {\n    json: {\n      success: true,\n      invoice,\n      html\n    }\n  }\n];"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          832,
+          0
+        ],
+        "id": "83b2397d-a127-4456-815d-147dd99dc129",
+        "name": "Build Invoice Template"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://api.pdfshift.io/v3/convert/pdf",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "X-API-Key",
+                "value": "sk_8ac239468eb33f80ec134c41c08cf98ff787cdfa"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          },
+          "sendBody": true,
+          "bodyParameters": {
+            "parameters": [
+              {
+                "name": "source",
+                "value": "={{ $json.html }}"
+              }
+            ]
+          },
+          "options": {
+            "response": {
+              "response": {
+                "responseFormat": "file"
+              }
+            }
+          }
+        },
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "position": [
+          1040,
+          0
+        ],
+        "id": "978f7e7b-602e-4377-bd7d-87e6ceb4ad74",
+        "name": "Generate PDF"
+      },
+      {
+        "parameters": {
+          "name": "={{ $json.invoice.invoiceNumber }}.pdf",
+          "driveId": {
+            "__rl": true,
+            "mode": "list",
+            "value": "My Drive"
+          },
+          "folderId": {
+            "__rl": true,
+            "mode": "list",
+            "value": "root",
+            "cachedResultName": "/ (Root folder)"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.googleDrive",
+        "typeVersion": 3,
+        "position": [
+          1248,
+          0
+        ],
+        "id": "da9d5dc5-0fc7-4201-9f6c-054c8075084a",
+        "name": "Store Invoice",
+        "credentials": {
+          "googleDriveOAuth2Api": {
+            "id": "IGVkkLMBubF5zD5i",
+            "name": "Google Drive account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "sendTo": "={{ $json.invoice.customer.email }}",
+          "subject": "=Invoice {{ $('Build Invoice Template').item.json.invoice.invoiceNumber }} from {{ $('Build Invoice Template').item.json.invoice.business.name }}",
+          "message": "=<div style=\"font-family: Arial, Helvetica, sans-serif; max-width: 600px; margin: 0 auto; color: #1f2937;\">    <h2 style=\"margin-bottom: 20px;\">     Invoice {{ $('Build Invoice Template').item.json.invoice.invoiceNumber }}   </h2>    <p>     Hello {{ $('Build Invoice Template').item.json.invoice.customer.name }},   </p>    <p>     Please find your invoice attached to this email.   </p>    <div style=\"     background: #f9fafb;     border: 1px solid #e5e7eb;     border-radius: 8px;     padding: 18px;     margin: 20px 0;   \">      <p style=\"margin: 6px 0;\">       <strong>Invoice Number:</strong>       {{ $('Build Invoice Template').item.json.invoice.invoiceNumber }}     </p>      <p style=\"margin: 6px 0;\">       <strong>Invoice Date:</strong>       {{ $('Build Invoice Template').item.json.invoice.invoiceDate }}     </p>      <p style=\"margin: 6px 0;\">       <strong>Due Date:</strong>       {{ $('Build Invoice Template').item.json.invoice.dueDate }}     </p>      <p style=\"margin: 6px 0;\">       <strong>Amount Due:</strong>       {{ $('Build Invoice Template').item.json.invoice.currency }}       {{ $('Build Invoice Template').item.json.invoice.calculations.amountDue }}     </p>    </div>    <p>     The invoice PDF is attached for your reference.   </p>    <p>     Thank you for your business.   </p>    <p>     Regards,<br>     <strong>{{ $('Build Invoice Template').item.json.invoice.business.name }}</strong><br>     {{ $('Build Invoice Template').item.json.invoice.business.email }}<br>     {{ $('Build Invoice Template').item.json.invoice.business.phone }}   </p>  </div>",
+          "options": {
+            "attachmentsUi": {
+              "attachmentsBinary": [
+                {}
+              ]
+            }
+          }
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.2,
+        "position": [
+          1376,
+          -176
+        ],
+        "id": "14c43586-b3c9-4f1a-b43d-7058bd9a1de5",
+        "name": "Email Invoice",
+        "webhookId": "0b5bda99-bf85-4192-97dc-6c13202498bf",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "dJo19xe1bVod4Y6k",
+            "name": "Gmail account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "{\n  \"success\": true,\n  \"message\": \"Invoice generated and sent successfully\",\n  \"invoice\": {\n    \"number\": \"INV-2026-001\",\n    \"total\": 37170,\n    \"currency\": \"INR\"\n  },\n  \"delivery\": {\n    \"email\": \"chandouqiande@gmail.com\",\n    \"status\": \"sent\"\n  },\n  \"file\": {\n    \"name\": \"INV-2026-001.pdf\",\n    \"status\": \"stored\"\n  }\n}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.5,
+        "position": [
+          1584,
+          -176
+        ],
+        "id": "2da4c8b0-d582-4109-8ae3-5c5dff8a98fe",
+        "name": "Respond to Webhook"
+      },
+      {
+        "parameters": {
+          "operation": "append",
+          "documentId": {
+            "__rl": true,
+            "value": "1WI1c17E6FBwe4tVK6FXtvb6mRvpmn3Z-n56Hfn04adk",
+            "mode": "list",
+            "cachedResultName": "Day-17(Invoice Genrator)",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1WI1c17E6FBwe4tVK6FXtvb6mRvpmn3Z-n56Hfn04adk/edit?usp=drivesdk"
+          },
+          "sheetName": {
+            "__rl": true,
+            "value": "gid=0",
+            "mode": "list",
+            "cachedResultName": "Sheet1",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1WI1c17E6FBwe4tVK6FXtvb6mRvpmn3Z-n56Hfn04adk/edit#gid=0"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "Invoice Number": "={{ $json.invoice.invoiceNumber }}",
+              "Customer Name": "={{ $json.invoice.customer.name }}",
+              "Customer Email": "={{ $json.invoice.customer.email }}",
+              "Invoice Date": "={{ $json.invoice.invoiceDate }}",
+              "Due Date": "={{ $json.invoice.dueDate }}",
+              "Currency": "={{ $json.invoice.currency }}",
+              "Sub Total": "={{ $json.invoice.calculations.subtotal }}",
+              "Discount ": "={{ $json.invoice.calculations.discountAmount }}",
+              "Tax": "={{ $json.invoice.calculations.taxAmount }}",
+              "Grand Total": "={{ $json.invoice.calculations.grandTotal }}",
+              "amount Due": "={{ $json.invoice.calculations.amountDue }}",
+              "Status": "pending",
+              "Created At": "={{$now}}",
+              "Last Reminder": "={{ $now }}",
+              "Reminder Count": "0"
+            },
+            "matchingColumns": [],
+            "schema": [
+              {
+                "id": "Invoice Number",
+                "displayName": "Invoice Number",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Customer Name",
+                "displayName": "Customer Name",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Customer Email",
+                "displayName": "Customer Email",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Invoice Date",
+                "displayName": "Invoice Date",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Due Date",
+                "displayName": "Due Date",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Currency",
+                "displayName": "Currency",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Sub Total",
+                "displayName": "Sub Total",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Discount ",
+                "displayName": "Discount ",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Tax",
+                "displayName": "Tax",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Grand Total",
+                "displayName": "Grand Total",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "amount Due",
+                "displayName": "amount Due",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Status",
+                "displayName": "Status",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Created At",
+                "displayName": "Created At",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Last Reminder",
+                "displayName": "Last Reminder",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Reminder Count",
+                "displayName": "Reminder Count",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.googleSheets",
+        "typeVersion": 4.7,
+        "position": [
+          1184,
+          -384
+        ],
+        "id": "e6a274e1-5de0-467c-a9f8-24d8c74e5910",
+        "name": "Append row in sheet",
+        "credentials": {
+          "googleSheetsOAuth2Api": {
+            "id": "XUo0YZXw282TEr36",
+            "name": "Google Sheets account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "mode": "combine",
+          "combineBy": "combineByPosition",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.merge",
+        "typeVersion": 3.2,
+        "position": [
+          992,
+          -256
+        ],
+        "id": "bc5e1bc8-0787-4754-8f73-5fed15d0fafd",
+        "name": "Prepare Delivery Data"
+      },
+      {
+        "parameters": {},
+        "type": "n8n-nodes-base.manualTrigger",
+        "typeVersion": 1,
+        "position": [
+          -1136,
+          656
+        ],
+        "id": "2b3ddd31-eba0-41c9-8c26-6bb2da0048d0",
+        "name": "When clicking ‘Execute workflow’"
+      },
+      {
+        "parameters": {
+          "documentId": {
+            "__rl": true,
+            "value": "1WI1c17E6FBwe4tVK6FXtvb6mRvpmn3Z-n56Hfn04adk",
+            "mode": "list",
+            "cachedResultName": "Day-17(Invoice Genrator)",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1WI1c17E6FBwe4tVK6FXtvb6mRvpmn3Z-n56Hfn04adk/edit?usp=drivesdk"
+          },
+          "sheetName": {
+            "__rl": true,
+            "value": "gid=0",
+            "mode": "list",
+            "cachedResultName": "Sheet1",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1WI1c17E6FBwe4tVK6FXtvb6mRvpmn3Z-n56Hfn04adk/edit#gid=0"
+          },
+          "filtersUI": {
+            "values": []
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.googleSheets",
+        "typeVersion": 4.7,
+        "position": [
+          -928,
+          656
+        ],
+        "id": "c4a6a2aa-0e46-4778-838e-64cebfc6da2b",
+        "name": "Get Invoice Records",
+        "credentials": {
+          "googleSheetsOAuth2Api": {
+            "id": "XUo0YZXw282TEr36",
+            "name": "Google Sheets account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const items = $input.all();\n\nconst now = new Date();\n\nreturn items.map(item => {\n  const invoice = item.json;\n\n  const dueDate = new Date(invoice[\"Due Date\"]);\n\n  let status = String(invoice[\"Status\"] || \"pending\").toLowerCase();\n\n  let invoiceState = \"unknown\";\n  let action = \"none\";\n  let daysDifference = null;\n\n  // --------------------------------------------\n  // Ignore already paid invoices\n  // --------------------------------------------\n  if (status === \"paid\") {\n    invoiceState = \"paid\";\n    action = \"none\";\n  }\n\n  // --------------------------------------------\n  // Check unpaid invoices\n  // --------------------------------------------\n  else if (status === \"pending\") {\n\n    // Normalize both dates to midnight\n    const today = new Date(now);\n    today.setHours(0, 0, 0, 0);\n\n    const due = new Date(dueDate);\n    due.setHours(0, 0, 0, 0);\n\n    const differenceMs = due.getTime() - today.getTime();\n\n    daysDifference = Math.round(\n      differenceMs / (1000 * 60 * 60 * 24)\n    );\n\n    // ------------------------------------------\n    // Upcoming invoice\n    // ------------------------------------------\n    if (daysDifference > 3) {\n      invoiceState = \"upcoming\";\n      action = \"none\";\n    }\n\n    // ------------------------------------------\n    // Due within 3 days\n    // ------------------------------------------\n    else if (daysDifference > 0) {\n      invoiceState = \"due_soon\";\n      action = \"reminder\";\n    }\n\n    // ------------------------------------------\n    // Due today\n    // ------------------------------------------\n    else if (daysDifference === 0) {\n      invoiceState = \"due_today\";\n      action = \"reminder\";\n    }\n\n    // ------------------------------------------\n    // Overdue\n    // ------------------------------------------\n    else {\n      invoiceState = \"overdue\";\n      action = \"overdue_reminder\";\n    }\n  }\n\n  return {\n    json: {\n      ...invoice,\n\n      invoiceState,\n      action,\n      daysDifference\n    }\n  };\n});"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -720,
+          656
+        ],
+        "id": "490a7d0c-b4d5-4283-8778-1ba6fe1352ec",
+        "name": "Check Invoice Status"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "7f21e477-6978-4f5b-a39d-e81017e37bb8",
+                "leftValue": "={{ $json.action }}",
+                "rightValue": "none",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEquals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          -512,
+          656
+        ],
+        "id": "164237e4-3b99-4f71-8eed-2729eecdedfd",
+        "name": "Check Invoice Status1"
+      },
+      {
+        "parameters": {
+          "sendTo": "={{ $json[\"Customer Email\"] }}",
+          "subject": "=Reminder: Invoice {{ $json[\"Invoice Number\"] }} is due soon",
+          "message": "=<div style=\"\n  margin: 0;\n  padding: 30px 20px;\n  background-color: #ffffff;\n  font-family: Arial, Helvetica, sans-serif;\n  color: #1f2937;\n\">\n\n  <table\n    width=\"100%\"\n    cellpadding=\"0\"\n    cellspacing=\"0\"\n    border=\"0\"\n    style=\"\n      max-width: 620px;\n      margin: 0 auto;\n      border-collapse: collapse;\n    \"\n  >\n\n    <!-- HEADER -->\n\n    <tr>\n      <td style=\"\n        padding: 0 0 18px 0;\n        border-bottom: 2px solid #111827;\n      \">\n\n        <div style=\"\n          font-size: 26px;\n          line-height: 32px;\n          font-weight: 700;\n          color: #111827;\n        \">\n          Payment Reminder\n        </div>\n\n        <div style=\"\n          margin-top: 6px;\n          font-size: 13px;\n          line-height: 20px;\n          color: #6b7280;\n        \">\n          Invoice {{ $json[\"Invoice Number\"] }}\n        </div>\n\n      </td>\n    </tr>\n\n\n    <!-- SPACING -->\n\n    <tr>\n      <td height=\"28\" style=\"font-size:0; line-height:0;\">\n        &nbsp;\n      </td>\n    </tr>\n\n\n    <!-- GREETING -->\n\n    <tr>\n      <td style=\"\n        font-size: 15px;\n        line-height: 24px;\n        padding-bottom: 14px;\n      \">\n\n        Hello {{ $json[\"Customer Name\"] }},\n\n      </td>\n    </tr>\n\n\n    <!-- MESSAGE -->\n\n    <tr>\n      <td style=\"\n        font-size: 15px;\n        line-height: 24px;\n        padding-bottom: 24px;\n      \">\n\n        This is a friendly reminder that invoice\n        <strong>{{ $json[\"Invoice Number\"] }}</strong>\n        is due in\n        <strong>{{ $json[\"daysDifference\"] }} days</strong>.\n\n      </td>\n    </tr>\n\n\n    <!-- INVOICE DETAILS BOX -->\n\n    <tr>\n      <td>\n\n        <table\n          width=\"100%\"\n          cellpadding=\"0\"\n          cellspacing=\"0\"\n          border=\"0\"\n          style=\"\n            border-collapse: separate;\n            border-spacing: 0;\n            background-color: #f9fafb;\n            border: 1px solid #e5e7eb;\n            border-radius: 8px;\n          \"\n        >\n\n          <!-- BOX TITLE -->\n\n          <tr>\n            <td colspan=\"2\" style=\"\n              padding: 18px 20px 12px 20px;\n              font-size: 11px;\n              line-height: 16px;\n              font-weight: 700;\n              letter-spacing: 0.8px;\n              text-transform: uppercase;\n              color: #6b7280;\n            \">\n\n              Invoice Details\n\n            </td>\n          </tr>\n\n\n          <!-- INVOICE NUMBER -->\n\n          <tr>\n\n            <td width=\"45%\" style=\"\n              padding: 7px 10px 7px 20px;\n              font-size: 14px;\n              line-height: 20px;\n              color: #6b7280;\n            \">\n              Invoice Number\n            </td>\n\n            <td width=\"55%\" style=\"\n              padding: 7px 20px 7px 10px;\n              font-size: 14px;\n              line-height: 20px;\n              font-weight: 700;\n              color: #111827;\n              text-align: right;\n              white-space: nowrap;\n            \">\n              {{ $json[\"Invoice Number\"] }}\n            </td>\n\n          </tr>\n\n\n          <!-- INVOICE DATE -->\n\n          <tr>\n\n            <td style=\"\n              padding: 7px 10px 7px 20px;\n              font-size: 14px;\n              line-height: 20px;\n              color: #6b7280;\n            \">\n              Invoice Date\n            </td>\n\n            <td style=\"\n              padding: 7px 20px 7px 10px;\n              font-size: 14px;\n              line-height: 20px;\n              font-weight: 700;\n              color: #111827;\n              text-align: right;\n              white-space: nowrap;\n            \">\n              {{ new Date($json[\"Invoice Date\"]).toLocaleDateString(\"en-IN\", {\n                day: \"2-digit\",\n                month: \"short\",\n                year: \"numeric\"\n              }) }}\n            </td>\n\n          </tr>\n\n\n          <!-- DUE DATE -->\n\n          <tr>\n\n            <td style=\"\n              padding: 7px 10px 7px 20px;\n              font-size: 14px;\n              line-height: 20px;\n              color: #6b7280;\n            \">\n              Due Date\n            </td>\n\n            <td style=\"\n              padding: 7px 20px 7px 10px;\n              font-size: 14px;\n              line-height: 20px;\n              font-weight: 700;\n              color: #111827;\n              text-align: right;\n              white-space: nowrap;\n            \">\n              {{ new Date($json[\"Due Date\"]).toLocaleDateString(\"en-IN\", {\n                day: \"2-digit\",\n                month: \"short\",\n                year: \"numeric\"\n              }) }}\n            </td>\n\n          </tr>\n\n\n          <!-- SEPARATOR -->\n\n          <tr>\n            <td colspan=\"2\" style=\"\n              padding: 8px 20px 0 20px;\n            \">\n\n              <div style=\"\n                height: 1px;\n                background-color: #e5e7eb;\n                font-size: 0;\n                line-height: 0;\n              \">\n                &nbsp;\n              </div>\n\n            </td>\n          </tr>\n\n\n          <!-- AMOUNT DUE -->\n\n          <tr>\n\n            <td style=\"\n              padding: 16px 10px 18px 20px;\n              font-size: 14px;\n              line-height: 22px;\n              color: #6b7280;\n            \">\n              Amount Due\n            </td>\n\n            <td style=\"\n              padding: 16px 20px 18px 10px;\n              font-size: 20px;\n              line-height: 24px;\n              font-weight: 700;\n              color: #111827;\n              text-align: right;\n              white-space: nowrap;\n            \">\n\n              {{ $json[\"Currency\"] === \"INR\" ? \"₹\" : $json[\"Currency\"] }}\n\n              {{ Number($json[\"amount Due\"]).toLocaleString(\"en-IN\", {\n                minimumFractionDigits: 2,\n                maximumFractionDigits: 2\n              }) }}\n\n            </td>\n\n          </tr>\n\n        </table>\n\n      </td>\n    </tr>\n\n\n    <!-- SPACING -->\n\n    <tr>\n      <td height=\"24\" style=\"font-size:0; line-height:0;\">\n        &nbsp;\n      </td>\n    </tr>\n\n\n    <!-- PAYMENT MESSAGE -->\n\n    <tr>\n      <td style=\"\n        font-size: 14px;\n        line-height: 23px;\n        color: #4b5563;\n        padding-bottom: 14px;\n      \">\n\n        Please arrange payment by the due date.\n\n      </td>\n    </tr>\n\n\n    <!-- ALREADY PAID -->\n\n    <tr>\n      <td style=\"\n        font-size: 14px;\n        line-height: 23px;\n        color: #4b5563;\n        padding-bottom: 18px;\n      \">\n\n        If you have already made the payment,\n        please disregard this reminder.\n\n      </td>\n    </tr>\n\n\n    <!-- THANK YOU -->\n\n    <tr>\n      <td style=\"\n        font-size: 14px;\n        line-height: 23px;\n        color: #1f2937;\n        padding-bottom: 24px;\n      \">\n\n        Thank you.\n\n      </td>\n    </tr>\n\n\n    <!-- FOOTER -->\n\n    <tr>\n      <td style=\"\n        border-top: 1px solid #e5e7eb;\n        padding-top: 18px;\n        font-size: 12px;\n        line-height: 19px;\n        color: #9ca3af;\n      \">\n\n        <strong style=\"color: #4b5563;\">\n          Shinka Solutions\n        </strong>\n\n        <br>\n\n        {{ $json[\"Customer Email\"] }}\n\n      </td>\n    </tr>\n\n  </table>\n\n</div>",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.2,
+        "position": [
+          -208,
+          608
+        ],
+        "id": "c7cdd528-e769-4c0d-a24b-fe10f417eef2",
+        "name": "Send a message",
+        "webhookId": "8e887856-3c40-4a63-a1f9-3cbd3793fccf",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "dJo19xe1bVod4Y6k",
+            "name": "Gmail account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "update",
+          "documentId": {
+            "__rl": true,
+            "value": "1WI1c17E6FBwe4tVK6FXtvb6mRvpmn3Z-n56Hfn04adk",
+            "mode": "list",
+            "cachedResultName": "Day-17(Invoice Genrator)",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1WI1c17E6FBwe4tVK6FXtvb6mRvpmn3Z-n56Hfn04adk/edit?usp=drivesdk"
+          },
+          "sheetName": {
+            "__rl": true,
+            "value": "gid=0",
+            "mode": "list",
+            "cachedResultName": "Sheet1",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1WI1c17E6FBwe4tVK6FXtvb6mRvpmn3Z-n56Hfn04adk/edit#gid=0"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "Invoice Number": "={{ $json[\"Invoice Number\"] }}",
+              "Last Reminder": "={{ $now.toISO() }}",
+              "Reminder Count": "={{ Number($json[\"Reminder Count\"] || 0) + 1 }}"
+            },
+            "matchingColumns": [
+              "Invoice Number"
+            ],
+            "schema": [
+              {
+                "id": "Invoice Number",
+                "displayName": "Invoice Number",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Customer Name",
+                "displayName": "Customer Name",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": true
+              },
+              {
+                "id": "Customer Email",
+                "displayName": "Customer Email",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": true
+              },
+              {
+                "id": "Invoice Date",
+                "displayName": "Invoice Date",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": true
+              },
+              {
+                "id": "Due Date",
+                "displayName": "Due Date",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": true
+              },
+              {
+                "id": "Currency",
+                "displayName": "Currency",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": true
+              },
+              {
+                "id": "Sub Total",
+                "displayName": "Sub Total",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": true
+              },
+              {
+                "id": "Discount ",
+                "displayName": "Discount ",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": true
+              },
+              {
+                "id": "Tax",
+                "displayName": "Tax",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": true
+              },
+              {
+                "id": "Grand Total",
+                "displayName": "Grand Total",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": true
+              },
+              {
+                "id": "amount Due",
+                "displayName": "amount Due",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": true
+              },
+              {
+                "id": "Status",
+                "displayName": "Status",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": true
+              },
+              {
+                "id": "Created At",
+                "displayName": "Created At",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": true
+              },
+              {
+                "id": "Last Reminder",
+                "displayName": "Last Reminder",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "Reminder Count",
+                "displayName": "Reminder Count",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "row_number",
+                "displayName": "row_number",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "number",
+                "canBeUsedToMatch": true,
+                "readOnly": true,
+                "removed": true
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.googleSheets",
+        "typeVersion": 4.7,
+        "position": [
+          -208,
+          448
+        ],
+        "id": "1af0768f-dbe5-475a-816b-f2e608e70be4",
+        "name": "Update row in sheet",
+        "credentials": {
+          "googleSheetsOAuth2Api": {
+            "id": "XUo0YZXw282TEr36",
+            "name": "Google Sheets account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "invoice-payment",
+          "responseMode": "responseNode",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          1040,
+          592
+        ],
+        "id": "c70587bd-709f-42dc-b473-8849afc85156",
+        "name": "Payment Webhook",
+        "webhookId": "7a7e5b08-fc69-4897-ba63-7a6a3a5a874c"
+      },
+      {
+        "parameters": {
+          "jsCode": "const items = $input.all();\n\nreturn items.map(item => {\n  const data = item.json.body ?? item.json;\n\n  const invoiceNumber = String(data.invoiceNumber || \"\").trim();\n  const paymentStatus = String(data.paymentStatus || \"\").trim().toLowerCase();\n\n  if (!invoiceNumber) {\n    throw new Error(\"Invoice number is required\");\n  }\n\n  if (paymentStatus !== \"paid\") {\n    throw new Error(\"Payment status must be 'paid'\");\n  }\n\n  return {\n    json: {\n      invoiceNumber,\n      paymentStatus\n    }\n  };\n});"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1248,
+          592
+        ],
+        "id": "9e619460-e4ff-4feb-af81-ea64d1d03056",
+        "name": "Validate Payment"
+      },
+      {
+        "parameters": {
+          "documentId": {
+            "__rl": true,
+            "value": "1WI1c17E6FBwe4tVK6FXtvb6mRvpmn3Z-n56Hfn04adk",
+            "mode": "list",
+            "cachedResultName": "Day-17(Invoice Genrator)",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1WI1c17E6FBwe4tVK6FXtvb6mRvpmn3Z-n56Hfn04adk/edit?usp=drivesdk"
+          },
+          "sheetName": {
+            "__rl": true,
+            "value": "gid=0",
+            "mode": "list",
+            "cachedResultName": "Sheet1",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1WI1c17E6FBwe4tVK6FXtvb6mRvpmn3Z-n56Hfn04adk/edit#gid=0"
+          },
+          "filtersUI": {
+            "values": [
+              {
+                "lookupColumn": "Invoice Number",
+                "lookupValue": "={{ $json.invoiceNumber }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.googleSheets",
+        "typeVersion": 4.7,
+        "position": [
+          1456,
+          592
+        ],
+        "id": "ccc4ee4c-b8ad-42e1-8879-012252dab490",
+        "name": "Find Invoice",
+        "credentials": {
+          "googleSheetsOAuth2Api": {
+            "id": "XUo0YZXw282TEr36",
+            "name": "Google Sheets account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "{\n  \"success\": true,\n  \"message\": \"Invoice marked as paid\",\n  \"invoiceNumber\": \"INV-2026-001\"\n}",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.5,
+        "position": [
+          1872,
+          592
+        ],
+        "id": "9960fdd0-6cef-485c-abb7-0ddbb4a7d1a5",
+        "name": "Respond to Payment"
+      },
+      {
+        "parameters": {
+          "operation": "update",
+          "documentId": {
+            "__rl": true,
+            "value": "1WI1c17E6FBwe4tVK6FXtvb6mRvpmn3Z-n56Hfn04adk",
+            "mode": "list",
+            "cachedResultName": "Day-17(Invoice Genrator)",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1WI1c17E6FBwe4tVK6FXtvb6mRvpmn3Z-n56Hfn04adk/edit?usp=drivesdk"
+          },
+          "sheetName": {
+            "__rl": true,
+            "value": "gid=0",
+            "mode": "list",
+            "cachedResultName": "Sheet1",
+            "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1WI1c17E6FBwe4tVK6FXtvb6mRvpmn3Z-n56Hfn04adk/edit#gid=0"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "Invoice Number": "={{ $json['Invoice Number'] }}",
+              "amount Due": "0",
+              "Status": "paid"
+            },
+            "matchingColumns": [
+              "Invoice Number"
+            ],
+            "schema": [
+              {
+                "id": "Invoice Number",
+                "displayName": "Invoice Number",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": false
+              },
+              {
+                "id": "Customer Name",
+                "displayName": "Customer Name",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": true
+              },
+              {
+                "id": "Customer Email",
+                "displayName": "Customer Email",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": true
+              },
+              {
+                "id": "Invoice Date",
+                "displayName": "Invoice Date",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": true
+              },
+              {
+                "id": "Due Date",
+                "displayName": "Due Date",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": true
+              },
+              {
+                "id": "Currency",
+                "displayName": "Currency",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": true
+              },
+              {
+                "id": "Sub Total",
+                "displayName": "Sub Total",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": true
+              },
+              {
+                "id": "Discount ",
+                "displayName": "Discount ",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": true
+              },
+              {
+                "id": "Tax",
+                "displayName": "Tax",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": true
+              },
+              {
+                "id": "Grand Total",
+                "displayName": "Grand Total",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": true
+              },
+              {
+                "id": "amount Due",
+                "displayName": "amount Due",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "Status",
+                "displayName": "Status",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true
+              },
+              {
+                "id": "Created At",
+                "displayName": "Created At",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": true
+              },
+              {
+                "id": "Last Reminder",
+                "displayName": "Last Reminder",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": true
+              },
+              {
+                "id": "Reminder Count",
+                "displayName": "Reminder Count",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "canBeUsedToMatch": true,
+                "removed": true
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.googleSheets",
+        "typeVersion": 4.7,
+        "position": [
+          1664,
+          592
+        ],
+        "id": "a3e0787e-facb-4e01-9eaf-ecffb5824f4c",
+        "name": "Mark Invoice as Paid",
+        "credentials": {
+          "googleSheetsOAuth2Api": {
+            "id": "XUo0YZXw282TEr36",
+            "name": "Google Sheets account"
+          }
+        }
+      }
+    ],
+    "connections": {
+      "Validate Invoice Input": {
+        "main": [
+          [
+            {
+              "node": "Normalize Invoice Data",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Normalize Invoice Data": {
+        "main": [
+          [
+            {
+              "node": "Calculate Invoice",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Calculate Invoice": {
+        "main": [
+          [
+            {
+              "node": "Build Invoice Template",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Prepare Delivery Data",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Invoice Request": {
+        "main": [
+          [
+            {
+              "node": "Validate Invoice Input",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Invoice Template": {
+        "main": [
+          [
+            {
+              "node": "Generate PDF",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Generate PDF": {
+        "main": [
+          [
+            {
+              "node": "Store Invoice",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Prepare Delivery Data",
+              "type": "main",
+              "index": 1
+            }
+          ]
+        ]
+      },
+      "Store Invoice": {
+        "main": [
+          []
+        ]
+      },
+      "Email Invoice": {
+        "main": [
+          [
+            {
+              "node": "Respond to Webhook",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prepare Delivery Data": {
+        "main": [
+          [
+            {
+              "node": "Append row in sheet",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Email Invoice",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "When clicking ‘Execute workflow’": {
+        "main": [
+          [
+            {
+              "node": "Get Invoice Records",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Get Invoice Records": {
+        "main": [
+          [
+            {
+              "node": "Check Invoice Status",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Check Invoice Status": {
+        "main": [
+          [
+            {
+              "node": "Check Invoice Status1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Check Invoice Status1": {
+        "main": [
+          [
+            {
+              "node": "Send a message",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Update row in sheet",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Payment Webhook": {
+        "main": [
+          [
+            {
+              "node": "Validate Payment",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Validate Payment": {
+        "main": [
+          [
+            {
+              "node": "Find Invoice",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Find Invoice": {
+        "main": [
+          [
+            {
+              "node": "Mark Invoice as Paid",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Mark Invoice as Paid": {
+        "main": [
+          [
+            {
+              "node": "Respond to Payment",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "Chandu M",
+    "name": "Invoice Generator",
+    "description": "Just readjusted the position of phases",
+    "autosaved": true,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-09-05T05:34:27.345Z",
+        "id": 119,
+        "workflowId": "8DDgfXcJXLwVI8TO",
+        "versionId": "1637ba4b-c779-4d54-a5a3-81575ab98226",
+        "event": "activated",
+        "userId": "8d994dc9-eaab-443f-93bf-ef4aa823f36d"
+      }
+    ]
+  },
+  "scopes": [
+    "execution:reveal",
+    "workflow:create",
+    "workflow:delete",
+    "workflow:disableRedaction",
+    "workflow:enableRedaction",
+    "workflow:execute",
+    "workflow:execute-chat",
+    "workflow:export",
+    "workflow:list",
+    "workflow:move",
+    "workflow:publish",
+    "workflow:read",
+    "workflow:share",
+    "workflow:unpublish",
+    "workflow:unshare",
+    "workflow:update"
+  ],
+  "checksum": "0b469f3d12b1661e14a83a6089327d03251680a9f6b7cbd7c95b9e757d43e4a8"
+}
