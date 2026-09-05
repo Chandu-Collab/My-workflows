@@ -19,7 +19,22 @@
 
 ## 🔥 Workflows
 
-### 🤖 AI Quote Generator — Professional Business Quotation Automation (NEW 🔥)
+### 🧾 AI Invoice Generator — Professional Billing Automation (NEW 🔥)
+
+An automated invoicing system built with n8n. The AI Invoice Generator handles the entire invoicing process — from receiving billing details to generating a professional PDF invoice, emailing it to the client, and tracking payment status.
+
+✨ **Features:**
+- 📄 Automated invoice PDF generation and Google Drive storage
+- 💰 Client and payment tracking
+- 🔁 Automated payment reminder emails
+- 📊 Google Sheets integration for financial tracking
+- 📧 Dynamic email delivery via Gmail
+
+📁 **Folder:** [AI Invoice Generator](./workflows/AI%20Invoice%20Generator/)
+
+---
+
+### 🤖 AI Quote Generator — Professional Business Quotation Automation
 
 An end-to-end business quotation automation built with n8n. The AI Quote Generator automates the complete quotation lifecycle — from receiving a quote request to generating a professional PDF, delivering it to the customer, tracking interactions, handling acceptance or rejection, and automatically sending follow-up emails.
 
@@ -252,6 +267,7 @@ Automatically monitor competitor websites, detect business changes, and receive 
 
 ```bash
 ai-automation-workflows/
+├── workflows/AI Invoice Generator/
 ├── workflows/AI Quote Generator — Professional Business Quotation Automation/
 ├── workflows/ai-lead-management-automation/
 ├── workflows/AI Receptionist Automation Series/
